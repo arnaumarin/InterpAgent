@@ -20,76 +20,76 @@ GENERAL INSTRUCTIONS
 You coordinate TWO specialized agents. You can use ANY agent if you have the required INPUT data.
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ AGENT 1: FeatureFinder                                           │
+│ AGENT 1: FeatureFinder                                          │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│ INPUTS REQUIRED:                                                  │
-│   • workspace_root: Path to workspace                            │
-│   • prompts_dir: Directory with prompt text files                │
-│   • save_path: Where to save results                             │
-│                                                                   │
-│ INPUTS OPTIONAL:                                                  │
-│   • concepts: Which concepts to analyze (e.g., "french,german")   │
-│   • model_key: Which model (default: "gemma_2b")                 │
-│   • sae_layer_idx: Which SAE layer (default: 0)                  │
-│   • max_prompts_per_category: How many prompts (default: 500)    │
-│                                                                   │
-│ OUTPUTS PRODUCED:                                                 │
+│                                                                 │
+│ INPUTS REQUIRED:                                                │
+│   • workspace_root: Path to workspace                           │
+│   • prompts_dir: Directory with prompt text files               │
+│   • save_path: Where to save results                            │
+│                                                                 │
+│ INPUTS OPTIONAL:                                                │
+│   • concepts: Which concepts to analyze (e.g., "french,german") │
+│   • model_key: Which model (default: "gemma_2b")                │
+│   • sae_layer_idx: Which SAE layer (default: 0)                 │
+│   • max_prompts_per_category: How many prompts (default: 500)   │
+│                                                                 │
+│ OUTPUTS PRODUCED:                                               │
 │   save_path/YYYYMMDD_HHMMSS/  (timestamped directory)           │
-│   ├── top_markers_{{category}}_saeL{{layer}}_{{n}}prompts.csv         │
-│   ├── sae_feature_analysis.csv                                   │
-│   ├── prompt_metadata.csv                                        │
-│   ├── neuron_metadata.csv                                        │
-│   ├── category_validation_saeL{{layer}}_{{n}}prompts.json           │
-│   └── figures/ (visualization PDFs)                              │
-│                                                                   │
-│ WHAT IT DOES:                                                     │
-│   Extracts SAE features from language model activations,         │
-│   identifies marker features for each category, creates          │
-│   statistical analysis and visualizations.                       │
-│                                                                   │
+│   ├── top_markers_{{category}}_saeL{{layer}}_{{n}}prompts.csv   │
+│   ├── sae_feature_analysis.csv                                  │
+│   ├── prompt_metadata.csv                                       │
+│   ├── neuron_metadata.csv                                       │
+│   ├── category_validation_saeL{{layer}}_{{n}}prompts.json       │
+│   └── figures/ (visualization PDFs)                             │
+│                                                                 │
+│ WHAT IT DOES:                                                   │
+│   Extracts SAE features from language model activations,        │
+│   identifies marker features for each category, creates         │
+│   statistical analysis and visualizations.                      │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ AGENT 2: Feature Explainer                                          │
+│ AGENT 2: Feature Explainer                                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│ INPUTS REQUIRED:                                                  │
-│   • results_dir: FeatureFinder timestamped output directory      │
-│                 (e.g., save_path/20251029_180245/)               │
-│                 Must contain top_markers_*.csv files              │
-│   • feature_idx: Which feature to explain (integer)              │
-│                                                                   │
-│ NOTE: Uses agent's OpenAI credentials automatically              │
-│                                                                   │
-│ INPUTS OPTIONAL:                                                  │
-│   • max_iterations: Refinement iterations (default: 3)           │
-│   • n_test_cases: Test cases to generate (default: 24)           │
-│   • confidence_threshold: Target confidence (default: 0.85)      │
-│   • accuracy_threshold: Target test accuracy (default: 0.80)     │
-│   • use_agent_model: Use same LLM as agent (default: True)       │
-│                                                                   │
-│ OUTPUTS PRODUCED:                                                 │
-│   results_dir/feature_explanations/                              │
-│   └── feature_L{{layer}}_F{{feature_idx}}_{{timestamp}}.json           │
-│       {{                                                           │
-│         "feature_id": "L0F1234",                                  │
-│         "final_hypothesis": {{                                     │
-│           "description": "What this feature detects",            │
-│           "language_specificity": "French/English/etc",          │
-│           "semantic_category": "temporal/spatial/etc",           │
-│           "confidence": 0.87                                      │
-│         }},                                                        │
-│         "all_hypotheses": [...],  // Evolution over iterations   │
-│         "test_accuracy": 0.83                                     │
-│       }}                                                           │
-│                                                                   │
-│ WHAT IT DOES:                                                     │
-│   Generates validated explanations using hypothesis/test/refine  │
-│   loop with real SAE activations. Fetches activation examples    │
-│   from Neuronpedia for rich context, tests hypotheses with       │
-│   adversarial test cases, and refines based on LLM criticism.    │
-│                                                                   │
+│                                                                 │
+│ INPUTS REQUIRED:                                                │
+│   • results_dir: FeatureFinder timestamped output directory     │
+│                 (e.g., save_path/20251029_180245/)              │
+│                 Must contain top_markers_*.csv files            │
+│   • feature_idx: Which feature to explain (integer)             │
+│                                                                 │
+│ NOTE: Uses agent's OpenAI credentials automatically             │
+│                                                                 │
+│ INPUTS OPTIONAL:                                                │
+│   • max_iterations: Refinement iterations (default: 3)          │
+│   • n_test_cases: Test cases to generate (default: 24)          │
+│   • confidence_threshold: Target confidence (default: 0.85)     │
+│   • accuracy_threshold: Target test accuracy (default: 0.80)    │
+│   • use_agent_model: Use same LLM as agent (default: True)      │
+│                                                                 │
+│ OUTPUTS PRODUCED:                                               │
+│   results_dir/feature_explanations/                             │
+│   └── feature_L{{layer}}_F{{feature_idx}}_{{timestamp}}.json    │
+│       {{                                                        │
+│         "feature_id": "L0F1234",                                │
+│         "final_hypothesis": {{                                  │
+│           "description": "What this feature detects",           │
+│           "language_specificity": "French/English/etc",         │
+│           "semantic_category": "temporal/spatial/etc",          │
+│           "confidence": 0.87                                    │
+│         }},                                                     │
+│         "all_hypotheses": [...],  // Evolution over iterations  │
+│         "test_accuracy": 0.83                                   │
+│       }}                                                        │
+│                                                                 │
+│ WHAT IT DOES:                                                   │
+│   Generates validated explanations using hypothesis/test/refine │
+│   loop with real SAE activations. Fetches activation examples   │
+│   from Neuronpedia for rich context, tests hypotheses with      │
+│   adversarial test cases, and refines based on LLM criticism.   │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 ---
