@@ -1,0 +1,131 @@
+.log-wrapper {
+    height: 1000px;
+    width: 1400px;
+    overflow-y: auto;
+    background-color: #fefefe;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    line-height: 1.4;
+    color: #111;
+}
+.log-message {
+    margin-bottom: 10px;
+}
+
+/* Chat input area */
+textarea {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+/* Buttons */
+button {
+    background-color: #111827;
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+
+/* Titles */
+h1 {
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+/* style.css */
+
+.chat-block {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+}
+
+.prefix {
+    font-size: 13px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.chat-bubble {
+    max-width: 60%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 15px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.human {
+    align-items: flex-end;
+    text-align: right;
+    margin-left: auto;
+}
+
+.human .chat-bubble {
+    background-color: #0b2a4a;
+    border-top-right-radius: 0;
+}
+
+.ai {
+    align-items: flex-start;
+    text-align: left;
+    margin-right: auto;
+}
+
+.ai .chat-bubble {
+    background-color: #09463b;
+    border-top-left-radius: 0;
+}
+
+
+.chat-image {
+    max-width: 250px;
+    max-height: 250px;
+    margin: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    object-fit: contain;
+}
+
+.chat-block.human img {
+    margin-left: auto;
+    display: block;
+}
+
+.chat-block.ai img {
+    margin-right: auto;
+    display: block;
+}
+
+/* style.css */
+
+.sidebar .stButton > button {
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.sidebar .stButton > button:hover {
+    background-color: #e0e0e0;
+    color: #000;
+}
+
+.sidebar .stSelectbox {
+    margin-bottom: 10px;
+}
+
+.sidebar h2, .sidebar h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #444;
+}

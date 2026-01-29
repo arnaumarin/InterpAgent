@@ -1,0 +1,8 @@
+agent_path: "Agents"
+
+root_agent: "InterpAgent"
+
+agent_graph:
+  InterpAgent:
+    FeatureFinder: {}
+    FeatureExplainer: {}

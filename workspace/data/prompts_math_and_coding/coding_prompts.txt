@@ -1,0 +1,374 @@
+Write a function to find the longest chain which can be formed from the given set of pairs.
+Write a python function to find the first repeated character in a given string.
+Write a function to get a lucid number smaller than or equal to n.
+Write a function to reverse words in a given string.
+Write a function to check if the given integer is a prime number.
+Write a function to convert degrees to radians.
+Write a function to search a literals string in a string and also find the location within the original string where the pattern occurs by using regex.
+Write a python function to find nth bell number.
+Write a python function to find minimum possible value for the given periodic function.
+Write a python function to remove the k'th element from a given list.
+Write a function to find the maximum of nth column from the given tuple list.
+Write a python function to merge the first and last elements separately in a list of lists.
+Write a function to find the maximum value in record list as tuple attribute in the given tuple list.
+Write a function to find the cumulative sum of all the values that are present in the given tuple list.
+Write a function to find average value of the numbers in a given tuple of tuples.
+Write a function to perfom the modulo of tuple elements in the given two tuples.
+Write a function to check for the number of jumps required of given length to reach a point of form (d, 0) from origin in a 2d plane.
+Write a function to divide two lists using map and lambda function.
+Write a function to move all the numbers in it to the given string.
+Write a function to find the largest subset where each pair is divisible.
+Write a function to increment the numeric values in the given strings by k.
+Write a function to find the median of two sorted arrays of same size.
+Write a function to find the n-th power of individual elements in a list using lambda function.
+Write a python function to convert the given string to upper case.
+Write a python function to interchange first and last elements in a given list.
+Write a python function to find the largest triangle that can be inscribed in the semicircle.
+Write a python function to find the smallest missing number from the given array.
+Write a function to replace all spaces in the given string with character * list item * list item * list item * list item '%20'.
+Write a python function to find even numbers from a mixed list.
+Write a function to extract all the adjacent coordinates of the given coordinate tuple.
+Write a function to replace whitespaces with an underscore and vice versa in a given string by using regex.
+Write a python function to move all zeroes to the end of the given list.
+Write a python function to find the sum of xor of all pairs of numbers in the given array.
+Write a python function to find the sum of fourth power of first n even natural numbers.
+Write a function to push all values into a heap and then pop off the smallest values one at a time.
+Write a python function to check if roots of a quadratic equation are reciprocal of each other or not.
+Write a function to check whether the given amount has no profit and no loss
+Write a function to calculate wind chill index.
+Write a function to sum the length of the names of a given list of names after removing the names that start with a lowercase letter.
+Write a function to remove the parenthesis area in a string.
+Write a function to find the nth nonagonal number.
+Write a function to remove similar rows from the given tuple matrix.
+Write a function that matches a word containing 'z', not at the start or end of the word.
+Write a python function to reverse an array upto a given position.
+Write a function to find the product of it’s kth index in the given tuples.
+Write a python function to count number of cubes of size k in a cube of size n.
+Write a function to split a string at uppercase letters.
+Write a function to exchange the position of every n-th value with (n+1)th value and (n+1)th value with n-th value in a given list.
+Write a python function to calculate the sum of the numbers in a list between the indices of a specified range.
+Write a python function to check whether the given two arrays are equal or not.
+Write a function to check if one tuple is a subset of another tuple.
+Write a function to flatten the given tuple matrix into the tuple list with each tuple representing each column.
+Write a function to group a sequence of key-value pairs into a dictionary of lists using collections module.
+Write a function to find the perimeter of a rectangle.
+Write a python function to find the sum of fifth power of n natural numbers.
+Write a python function to find the minimum sum of absolute differences of two arrays.
+Write a python function to find the first digit in factorial of a given number.
+Write a function to find the item with maximum occurrences in a given list.
+Write a python function to print duplicants from a list of integers.
+Write a python function to choose points from two ranges such that no point lies in both the ranges.
+Write a function to find the maximum sum that can be formed which has no three consecutive elements present.
+Write a function to sort a list in a dictionary.
+Write a function to find the largest possible value of k such that k modulo x is y.
+Write a python function to find the average of even numbers till a given even number.
+Write a python function to shift first element to the end of given list.
+Write a function to count occurrence of a character in a string.
+Write a python function to count number of vowels in the string.
+Write a python function to replace multiple occurence of character by single.
+Write a function to check whether the given ip address is valid or not using regex.
+Write a python function to check whether a sequence of numbers has a decreasing trend or not.
+Write a python function to set the right most unset bit.
+Write a function to find maximum of three numbers.
+Write a python function to convert a list of multiple integers into a single integer.
+Write a function to remove duplicate words from a given string using collections module.
+Write a function to add two integers. however, if the sum is between the given range it will return 20.
+Write a function to remove everything except alphanumeric characters from the given string by using regex.
+Write a function to check if the triangle is valid or not.
+Write a python function to remove spaces from a given string.
+Write a function to access dictionary key’s element by index.
+Write a python function to check whether a sequence of numbers has an increasing trend or not.
+Write a python function to find the smallest prime divisor of a number.
+Write a function to multiply two lists using map and lambda function.
+Write a python function to check whether the given number can be represented by sum of two squares or not.
+Write a python function to count occurences of a character in a repeated string.
+Write a python function to find sum of prime numbers between 1 to n.
+Write a function to find the frequency of each element in the given list.
+Write a function to find the greatest common divisor (gcd) of two integers by using recursion.
+Write a function to get the length of a complex number.
+## write a function to find the minimum number of jumps to reach the end of the array for the given array of integers where each element represents the max number of steps that can be made forward from that element. > indented block > indented block
+Write a function to multiply consecutive numbers of a given list.
+Write a function to group the 1st elements on the basis of 2nd elements in the given tuple list.
+Write a python function to find the last two digits in factorial of a given number.
+Write a function to remove multiple spaces in a string by using regex.
+Write a function to extract unique values from the given dictionary values.
+Write a function to check if each element of the second tuple is greater than its corresponding index in the first tuple.
+Write a function to zip two given lists of lists.
+Write a function to find number of even elements in the given list using lambda function.
+Write a function to sort dictionary items by tuple product of keys for the given dictionary with tuple keys.
+Write a python function to find the minimum number of swaps required to convert one binary string to another.
+Write a function to count the number of elements in a list which are within a specific range.
+Write a function to find the equilibrium index of the given array.
+Write a function to find the minimum number of elements that should be removed such that amax-amin<=k.
+Write a function to check whether the given key is present in the dictionary or not.
+Write a function to calculate the harmonic sum of n-1.
+Write a function to sort a list of lists by length and value.
+Write a function to find whether an array is subset of another array.
+Write a python function to count the total set bits from 1 to n.
+Write a python function to convert a string to a list.
+Write a function to count unique keys for each value present in the tuple.
+Write a function to access the initial and last data of the given tuple record.
+Write a python function to check whether the product of digits of a number at even and odd places is equal or not.
+Write a function to remove duplicates from a list of lists.
+Write a function to check if the given tuple contains all valid values or not.
+Write a python function to count the number of distinct power of prime factor of given number.
+Write a function to convert the given string of integers into a tuple.
+Write a function to find the perimeter of a rombus.
+Write a function to calculate the standard deviation.
+Write a function to create a list taking alternate elements from another given list.
+Write a function that matches a string that has an a followed by zero or more b's.
+Write a function to add a dictionary to the tuple.
+Write a function to find a path with the maximum average over all existing paths for the given square matrix of size n*n.
+Write a function to filter the height and width of students which are stored in a dictionary.
+Write a function to count the same pair in two given lists using map function.
+Write a function to calculate the sum of all digits of the base to the specified power.
+Write a function to extract values between quotation marks of the given string by using regex.
+Write a function to multiply the adjacent elements of the given tuple.
+Write a function to remove all characters except letters and numbers using regex
+Write a function to sum elements in two lists.
+Write a function to add two lists using map and lambda function.
+Write a function to remove consecutive duplicates of a given list.
+Write a function to find the lateral surface area of a cone.
+Write a function to replace all occurrences of spaces, commas, or dots with a colon.
+Write a function to find the index of the first occurrence of a given number in a sorted array.
+Write a python function to find sum of products of all possible subarrays.
+Write a python function to toggle bits of the number except the first and the last bit.
+Write a function to locate the left insertion point for a specified value in sorted order.
+Write a function to check whether the given string is starting with a vowel or not using regex.
+Write a function to calculate the geometric sum of n-1.
+Write a python function to find the index of smallest triangular number with n digits.
+Write a function to convert the given tuple to a key-value dictionary using adjacent elements.
+Write a python function to check whether all the characters are same or not.
+Write a function to caluclate the area of a tetrahedron.
+Write a function to rotate a given list by specified number of items to the right direction.
+Write a function to check if the given tuple has any none value or not.
+Write a function to find numbers within a given range where every number is divisible by every digit it contains.
+Write a function to find area of a sector.
+Write a function to find the longest common subsequence for the given three string sequence.
+Write a function to put spaces between words starting with capital letters in a given string by using regex.
+Write a function to sort a given list of strings of numbers numerically.
+Write a function to add the given tuple to the given list.
+Write a function to check if the given array represents min heap or not.
+Write a function to find the nth jacobsthal number.
+Write a function to find minimum k records from tuple list.
+Write a function to find common index elements from three lists.
+Write a function to find the second smallest number in a list.
+Write a function that matches a string that has an a followed by zero or one 'b'.
+Write a function to count the pairs of reverse strings in the given string list.
+Write a function to count number of unique lists within a list.
+Write a function to check a decimal with a precision of 2.
+Write a python function to check whether an array contains only one distinct element or not.
+Write a function to caluclate arc length of an angle.
+Write a function to check whether the given month number contains 30 days or not.
+Write a python function to find the minimum difference between any two elements in a given array.
+Write a python function to count numeric values in a given string.
+Write a function to find nth polite number.
+Write a function to iterate over all pairs of consecutive items in a given list.
+Write a python function to count the number of pairs whose sum is equal to ‘sum’.
+Write a python function to check for odd parity of a given number.
+Write a python function to get the difference between two lists.
+Write a python function to find the sum of fourth power of first n odd natural numbers.
+Write a function to check if the given expression is balanced or not.
+Write a function to remove all the words with k length in the given string.
+Write a function to find the occurrence and position of the substrings within a string.
+Write a function to check if the string is a valid email address or not using regex.
+Write a python function to check whether every odd index contains odd numbers of a given list.
+Write a function to count those characters which have vowels as their neighbors in the given string.
+Write a python function to find the sum of non-repeated elements in a given array.
+Write a function to pack consecutive duplicates of a given list elements into sublists.
+Write a function to count the number of unique lists within a list.
+Write a function to find the combinations of sums with tuples in the given tuple list.
+Write a python function to check whether the count of divisors is even or odd.
+Write a python function to find the sum of all odd length subarrays.
+Write a function to convert rgb color to hsv color.
+Write a function to find the product of first even and odd number of a given list.
+Write a function to convert tuple string to integer tuple.
+Write a function to locate the right insertion point for a specified value in sorted order.
+Write a function that matches a string that has an a followed by three 'b'.
+Write a function to create a new tuple from the given string and list.
+Write a function to calculate the perimeter of a regular polygon.
+Write a python function to check whether every even index contains even numbers of a given list.
+Write a function to remove the nested record from the given tuple.
+Write a python function to count the number of lists in a given number of lists.
+Write a python function to find the last position of an element in a sorted array.
+Write a function that matches a string that has an 'a' followed by anything, ending in 'b'.
+Write a function to find the n - cheap price items from a given dataset using heap queue algorithm.
+Write function to find the sum of all items in the given dictionary.
+Write a python function to find the sum of all odd natural numbers within the range l and r.
+Write a python function to find the sum of an array.
+Write a python function to left rotate the bits of a given number.
+Write a function to remove all whitespaces from a string.
+Write a python function to count the number of equal numbers from three given integers.
+Write a python function to count the number of rotations required to generate a sorted array.
+Write a python function to check whether the given number is a perfect square or not.
+Write a python function to check whether the product of numbers is even or not.
+Write a function to find the list in a list of lists whose sum of elements is the highest.
+Write a function to find maximum run of uppercase characters in the given string.
+Write a python function to find the first odd number in a given list of numbers.
+Write a function to check if the given tuples contain the k or not.
+Write a function to check if each element of second tuple is smaller than its corresponding index in first tuple.
+Write a function to iterate over elements repeating each as many times as its count.
+Write a function to check if two lists of tuples are identical or not.
+Write a function to abbreviate 'road' as 'rd.' in a given string.
+Write a function to find length of the string.
+Write a function to find the area of a rombus.
+Write a function to sort the given array without using any sorting algorithm. the given array consists of only 0, 1, and 2.
+Write a function to clear the values of the given tuples.
+Write a function to find numbers divisible by m or n from a list of numbers using lambda function.
+Write a python function to count lower case letters in a given string.
+Write a function to count the frequency of consecutive duplicate elements in a given list of numbers.
+Write a function to check whether the given month number contains 28 days or not.
+Write a function to merge two dictionaries into a single expression.
+Write a function to return true if the password is valid.
+Write a function to check if the given string starts with a substring using regex.
+Write a python function to remove even numbers from a given list.
+Write a python function to access multiple elements of specified index from a given list.
+Write a python function to find the type of triangle from the given sides.
+Write a function to sum a specific column of a list in a given list of lists.
+Write a function to count alphabets,digits and special charactes in a given string.
+Write a function to find out the second most repeated (or frequent) string in the given sequence.
+Write a function to round up a number to specific digits.
+Write a python function to count equal element pairs from the given array.
+Write a function to extract the maximum numeric value from a string by using regex.
+Write a function to get dictionary keys as a list.
+Write a function to generate a square matrix filled with elements from 1 to n raised to the power of 2 in spiral order.
+Write a python function to find the slope of a line.
+Write a function to find length of the subarray having maximum sum.
+Write a python function to find the cube sum of first n odd natural numbers.
+Write a python function to find minimum number swaps required to make two binary strings equal.
+Write a function to sort the tuples alphabetically by the first item of each tuple.
+Write a python function to check whether the roots of a quadratic equation are numerically equal but opposite in sign or not.
+Write a function to count the number of inversions in the given array.
+Write a function to find the number which occurs for odd number of times in the given array.
+Write a function to find the nth super ugly number from a given prime list of size k using heap queue algorithm.
+Write a python function to find the kth element in an array containing odd elements first and then even elements.
+Write a python function to count the number of digits in factorial of a given number.
+Write a function to find the minimum number of platforms required for a railway/bus station.
+Write a python function to copy a list from a singleton tuple.
+Write a function to find the area of a trapezium.
+Write a python function to find sum of all prime divisors of a given number.
+Write a function to check if a triangle of positive area is possible with the given angles.
+Write a python function to find sum of inverse of divisors.
+Write a python function to remove negative numbers from a list.
+Write a python function to find sum of odd factors of a number.
+Write a function which accepts an arbitrary list and converts it to a heap using heap queue algorithm.
+Write a python function to check for even parity of a given number.
+Write a python function to find minimum adjacent swaps required to sort binary array.
+Write a function to list out the list of given strings individually using map function.
+Write a function to count number of lists in a given list of lists and square the count.
+Write a function to generate all sublists of a given list.
+Write a function to check whether the given string is ending with only alphanumeric characters or not using regex.
+Write a function to find all anagrams of a string in a given list of strings using lambda function.
+Write a function to find the occurrences of n most common words in a given text.
+Write a function to find the length of the longest sub-sequence such that elements in the subsequences are consecutive integers.
+Write a function to find palindromes in a given list of strings using lambda function.
+Write a function to print n-times a list using map function.
+Write a function to check whether the given month name contains 31 days or not.
+Write a python function to add a minimum number such that the sum of array becomes even.
+Write a python function to find the length of the last word in a given string.
+Write a function to remove sublists from a given list of lists, which are outside a given range.
+Write a function to calculate the sum of the positive numbers of a given list of numbers using lambda function.
+Write a python function to check whether the given strings are rotations of each other or not.
+Write a function to check if a nested list is a subset of another nested list.
+Write a function to solve the fibonacci sequence using recursion.
+Write a python function to check if the string is a concatenation of another string.
+Write a function to find the minimum difference in the tuple pairs of given tuples.
+Write a python function to find lcm of two positive integers.
+Write a python function to sort the given string.
+Write a function to check if the given tuple contains only k elements.
+Write a function that matches a string that has an 'a' followed by anything, ending in 'b' by using regex.
+Write a python function to find number of solutions in quadratic equation.
+Write a function to find the sum of first even and odd number of a given list.
+Write a function to caluclate perimeter of a parallelogram.
+Write a function to find numbers divisible by m and n from a list of numbers using lambda function.
+Write a python function to check whether all the bits are within a given range or not.
+Write a python function to check whether the two given strings are isomorphic to each other or not.
+Write a function to add all the numbers in a list and divide it with the length of the list.
+Write a python function to check whether the given number is odd or not using bitwise operator.
+Write a function to substract the elements of the given nested tuples.
+Write a function to reverse each list in a given list of lists.
+Write a python function to find the index of an extra element present in one sorted array.
+Write a python function to check whether the given two numbers have same number of digits or not.
+Write a function to remove multiple spaces in a string.
+Write a python function to get the last element of each sublist.
+Write a function to convert the given string of float type into tuple.
+Write a function to find the maximum sum of subsequences of given array with no adjacent elements.
+Write a function to sort a list in increasing order by the last element in each tuple from a given list of non-empty tuples.
+Write a python function to check whether the word is present in a given sentence or not.
+Write a function to extract specified number of elements from a given list, which follow each other continuously.
+Write a python function to check whether an array can be sorted or not by picking only the corner elements.
+Write a function where a string will start with a specific number.
+Write a function to find the smallest multiple of the first n numbers.
+Write a function to combine two dictionaries by adding values for common keys.
+Write a python function to count the total unset bits from 1 to n.
+Write a function to return true if the given number is even else return false.
+Write a python function to find the sum of squares of binomial co-efficients.
+Write a function to extract year, month and date from a url by using regex.
+Write a function to print the first n lucky numbers.
+Write a function to find the fixed point in the given array.
+Write a function to find the previous palindrome of a specified number.
+Write a function to validate a gregorian date.
+Write a function to compute maximum product of three numbers of a given array of integers using heap queue algorithm.
+Write a function to find ln, m lobb number.
+Write a function to check for a number at the end of a string.
+Write a python function to check whether the given string is made up of two alternating characters or not.
+Write a function to rearrange positive and negative numbers in a given array using lambda function.
+Write a function to find if there is a triplet in the array whose sum is equal to a given value.
+Write a function to find the sequences of one upper case letter followed by lower case letters.
+Write a function to count coin change.
+Write a python function to multiply all items in the list.
+Write a function to remove all tuples with all none values in the given tuple list.
+Write a function to perform chunking of tuples each of size n.
+Write a function to find a pair with the highest product from a given array of integers.
+Write a function to find the length of the shortest string that has both str1 and str2 as subsequences.
+Write a function to find maximum of two numbers.
+Write a python function to calculate the product of all the numbers of a given tuple.
+Write a function to find n-th rencontres number.
+Write a function to calculate the height of the given binary tree.
+Write a function to convert a date of yyyy-mm-dd format to dd-mm-yyyy format.
+Write a function to count repeated items of a tuple.
+Write a function that matches a string that has an a followed by zero or more b's by using regex.
+Write a function to calculate the sum of series 1³+2³+3³+….+n³.
+Write a function to remove duplicate words from a given list of strings.
+Write a function to convert camel case string to snake case string by using regex.
+Write a function to find the nth delannoy number.
+Write a function to calculate the sum of series 1²+2²+3²+….+n².
+Write a function to re-arrange the given tuples based on the given ordered list.
+Write a function to count the most common character in a given string.
+Write a function to find three closest elements from three sorted arrays.
+Write a function to sort a list of dictionaries using lambda function.
+Write a function to sort the given array by using heap sort.
+Write a function to count the elements in a list until an element is a tuple.
+Write a function to check if any list element is present in the given list.
+Write a function to combine two given sorted lists using heapq module.
+Write a function to separate and print the numbers and their position of a given string.
+Write a function to convert the given tuples into set.
+Write a function to find the most common elements and their counts of a specified text.
+Write a python function to find the length of the shortest word.
+Write a function to get an item of a tuple.
+Write a function to sort the given tuple list basis the total digits in tuple.
+Write a function to display sign of the chinese zodiac for given year.
+Write a function to find the maximum of similar indices in two lists of tuples.
+Write a function to compute the value of ncr mod p.
+Write a python function to find the minimun number of subsets with distinct elements.
+Write a function that gives profit amount if the given amount has profit else return none.
+Write a function to find out, if the given number is abundant.
+Write a function to split the given string at uppercase letters by using regex.
+Write a python function to get the position of rightmost set bit.
+Write a function to convert an integer into a roman numeral.
+Write a python function to find the average of a list.
+Write a function to solve tiling problem.
+Write a function to convert a roman numeral to an integer.
+Write a python function to find the sum of all even natural numbers within the range l and r.
+Write a function to calculate the discriminant value.
+Write a python function to check whether the length of the word is even or not.
+Write a function to convert camel case string to snake case string.
+Write a function to remove an empty tuple from a list of tuples.
+Write a python function to accept the strings which contains all vowels.
+Write a python function to find maximum possible value for the given periodic function.
+Write a function to join the tuples if they have similar initial elements.
+Write a function to find minimum of two numbers.
+Write a function to find the maximum number of segments of lengths a, b and c that can be formed from n.
+Write a function to concatenate the given two tuples to a nested tuple.
+Write a python function to left rotate the string.
+Write a function to find the minimum total path sum in the given triangle.

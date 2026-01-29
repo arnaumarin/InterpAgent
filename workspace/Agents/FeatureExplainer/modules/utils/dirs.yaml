@@ -1,0 +1,8 @@
+pkl_path: 'detected_spikes'
+sp_path: 'shank_positions.npy'
+ku_path: 'keep_unit_ids.npy'
+dataset_path: 'dataset'
+trained_model_path: 'trained_model'
+train_data_path: 'dataset/train_data'
+test_data_path: 'dataset/test_data'
+params_path: 'params.yaml'

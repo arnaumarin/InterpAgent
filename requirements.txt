@@ -1,0 +1,53 @@
+# InterpAgent – core dependencies
+# Python 3.10+ recommended. Install: pip install -r requirements.txt
+
+# App and server
+streamlit>=1.46
+
+# LangChain and LLM backends
+langchain>=0.3
+langchain-core>=0.3
+langchain-openai>=0.3
+langchain-google-genai>=2.0
+langchain-anthropic>=0.3
+langgraph>=0.2
+langchain-experimental>=0.3
+
+python-dotenv>=1.0
+PyYAML>=6.0
+
+Pillow>=10.0
+requests>=2.28
+httpx>=0.25
+tenacity>=9.0
+filetype>=1.2
+pydantic>=2.0
+
+transformers>=4.40
+torch>=2.1
+safetensors>=0.4
+datasets>=2.14
+accelerate>=0.26
+sentencepiece>=0.2
+scipy>=1.10
+matplotlib>=3.7
+tqdm>=4.66
+huggingface-hub>=0.19
+
+# Mechanistic interpretability & lens tooling
+sae-lens>=0.3.3
+transformer-lens>=1.12
+bitsandbytes>=0.41
+
+# faiss-cpu for fast similarity search (used by some agent modules)
+faiss-cpu>=1.7
+tiktoken>=0.7
+
+# With one, is enough
+openai>=1.22
+anthropic>=0.26
+google-generativeai>=0.3
+
+
+
+

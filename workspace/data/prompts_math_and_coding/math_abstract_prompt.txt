@@ -1,0 +1,452 @@
+∀x ∈ ℝ, x² ≥ 0
+∃x ∈ ℤ : x² = 4
+∀ε > 0, ∃δ > 0 : |x - a| < δ ⟹ |f(x) - f(a)| < ε
+(G, ·) ≅ (H, ∗)
+ker(φ) = {e}
+im(f) ⊆ Y
+f: X → Y
+g ∘ f: X → Z
+f⁻¹: Y → X
+id_X: X → X
+[G : H] = |G|/|H|
+⟨a⟩ = {aⁿ : n ∈ ℤ}
+G/N ≅ H
+Z(G) = {g ∈ G : ∀h ∈ G, gh = hg}
+[a, b] = aba⁻¹b⁻¹
+Aut(G)
+Inn(G)
+Out(G)
+Syl_p(G)
+N ⊲ G
+H ≤ G
+⟨S⟩ ⊆ G
+gHg⁻¹ = H
+G₁ × G₂
+G₁ ⊕ G₂
+G₁ ∗ G₂
+Hom(G, H)
+End(G)
+char(R) = n
+R[x]/(p(x))
+𝔽_p = ℤ/pℤ
+(R, +, ·)
+R× = R \ {0}
+I ⊆ R
+⟨a⟩ = aR
+I + J
+I ∩ J
+IJ
+√I = {r ∈ R : rⁿ ∈ I}
+R/I
+Spec(R)
+Max(R)
+Ann(M)
+Tor(M, N)
+Ext(M, N)
+M ⊗_R N
+Hom_R(M, N)
+M^∨ = Hom(M, R)
+rank(M)
+dim(V)
+V ⊕ W
+V ⊗ W
+V^∗
+⟨v, w⟩
+||v||
+ker(T)
+im(T)
+det(A)
+tr(A)
+χ_A(λ)
+A^T
+A^†
+[A, B] = AB - BA
+{A, B} = AB + BA
+gl(n, 𝔽)
+sl(n, 𝔽)
+so(n)
+su(n)
+sp(2n)
+𝔤 = [𝔤, 𝔤]
+ad_X(Y) = [X, Y]
+exp: 𝔤 → G
+log: G → 𝔤
+Lie(G)
+T_eG
+ω ∈ Ω^k(M)
+dω
+ω ∧ η
+ι_X ω
+ℒ_X ω
+∫_M ω
+∂M
+H^k(M)
+H_k(M)
+π_n(X)
+π₁(X, x₀)
+[f] ∈ π₁(X)
+f ≃ g
+X ≃ Y
+X ≅ Y
+χ(X) = ∑(-1)^k b_k
+b_k(X)
+H^*(X; R)
+H_*(X; R)
+C^k(X)
+∂: C_k → C_{k-1}
+Z_k(X) = ker(∂_k)
+B_k(X) = im(∂_{k+1})
+H_k(X) = Z_k/B_k
+f_*: H_k(X) → H_k(Y)
+f^*: H^k(Y) → H^k(X)
+⟨α, β⟩
+α ∪ β
+α ∩ β
+Sq^i
+[M] ∈ H_n(M)
+∫_M α ∧ β
+d² = 0
+∂² = 0
+(X, τ)
+𝒪(X)
+𝒞(X)
+X̄
+int(A)
+∂A
+A°
+Ā
+X \ A
+A ∪ B
+A ∩ B
+A △ B
+⋃_{i∈I} A_i
+⋂_{i∈I} A_i
+lim_{n→∞} x_n
+limsup x_n
+liminf x_n
+sup(A)
+inf(A)
+max(A)
+min(A)
+𝒫(X)
+2^X
+X × Y
+∏_{i∈I} X_i
+∐_{i∈I} X_i
+X/∼
+[x]
+{x ∈ X : P(x)}
+f: (X, τ_X) → (Y, τ_Y)
+f⁻¹(U)
+X ⊔ Y
+X ∨ Y
+X ∧ Y
+X * Y
+ΣX
+ΩX
+(X, d)
+B_r(x)
+S^{n-1}
+D^n
+ℝP^n
+ℂP^n
+T^n
+K(G, n)
+BG
+EG
+(X, 𝒜)
+𝒪_X
+Γ(U, ℱ)
+ℱ|_U
+ker(φ) → ℱ → 𝒢 → coker(φ)
+ℱ ⊗ 𝒢
+ℋom(ℱ, 𝒢)
+ℱ^∨
+H^i(X, ℱ)
+Čech H^i
+c₁(ℒ)
+ch(ℰ)
+td(X)
+K^0(X)
+K_0(X)
+Pic(X)
+Div(X)
+(f) = div(f)
+deg(D)
+ℓ(D)
+|D|
+ω_X
+K_X
+χ(𝒪_X)
+h^i(X, ℱ)
+Hilb(X)
+Def(X)
+Ω^1_X
+T_X
+𝒳 → S
+X ×_S Y
+Spec(A)
+Proj(S)
+𝔸^n
+ℙ^n
+𝒪(n)
+I(V)
+V(I)
+k[x₁, ..., x_n]/I
+dim(X)
+codim(Y, X)
+Sing(X)
+Reg(X)
+X^{sm}
+X^{sing}
+Bl_Y(X)
+X̃ → X
+(E, π, B)
+π⁻¹(b)
+Γ(E)
+T*M
+TM
+⋀^k T*M
+S^k TM
+∇_X Y
+R(X, Y)Z
+Ric(X, Y)
+R_{ijkl}
+g_{ij}
+Γ^k_{ij}
+∇²
+□ = ∇^μ∇_μ
+*: Ω^k → Ω^{n-k}
+δ = *d*
+△ = dδ + δd
+harm^k(M)
+[ω] ∈ H^k_{dR}(M)
+∫_γ ω
+∮_C f(z)dz
+Res(f, z₀)
+ord(f, z₀)
+div(f)
+deg(div(f))
+℘(z)
+ζ(s)
+L(s, χ)
+Γ(s)
+B(x, y)
+𝔽_q[t]
+𝔽_q[[t]]
+𝔽_q((t))
+v_p(x)
+|x|_p
+ℚ_p
+ℤ_p
+𝔸
+𝕀
+GL(n, 𝔸)
+χ: 𝔸^× → ℂ^×
+L(s, π)
+ε(s, π, ψ)
+Z(s, W)
+∫_{GL(n)} f(g)dg
+Eis(s, φ)
+θ(τ)
+j(τ)
+Δ(τ)
+η(τ)
+SL(2, ℤ)
+Γ₀(N)
+H/Γ
+X₀(N)
+J₀(N)
+T_p
+U_p
+⟨f, g⟩_{Pet}
+L(E, s)
+Λ(E, s)
+N_E
+a_p(E)
+#E(𝔽_p)
+E[n]
+E(ℚ)_{tors}
+rank(E(ℚ))
+ĥ(P)
+⟨P, Q⟩_{NT}
+Ш(E/ℚ)
+Sel^(p)(E/ℚ)
+BSD
+abc
+FLT
+RH
+GRH
+P = NP?
+P ⊆ NP
+NP ⊆ PSPACE
+PSPACE ⊆ EXPTIME
+BPP ⊆ P/poly
+L ⊆ P
+NC ⊆ P
+⊕P
+#P
+PP
+∃x∀y φ(x, y)
+∀ε∃N∀n > N : |a_n - L| < ε
+⊢ φ
+⊨ φ
+Γ ⊢ φ
+φ → ψ
+φ ∧ ψ
+φ ∨ ψ
+¬φ
+φ ↔ ψ
+□φ
+◊φ
+∀x φ(x)
+∃x φ(x)
+∃!x φ(x)
+ι_x φ(x)
+{x : φ(x)}
+℘(x, y)
+x ∈ y
+x ⊆ y
+x ⊂ y
+x ∪ y
+x ∩ y
+x \ y
+x × y
+{x}
+{x, y}
+⟨x, y⟩
+∅
+𝒫(x)
+⋃x
+⋂x
+V = L
+V = HOD
+0^#
+0^†
+κ⁺
+2^κ
+cf(κ)
+crit(j)
+j: V → M
+Ult(V, U)
+□_κ
+♢_κ
+κ → (λ)^n_m
+κ⁺⁺
+ω_1^{CK}
+Σ¹_n
+Π¹_n
+Δ¹_n
+ATR₀
+ACA₀
+WKL₀
+RCA₀
+IΣ_n
+BΣ_n
+PA
+ZF
+ZFC
+ZF + AD
+ZFC + MA
+ZFC + ♢
+ZFC + GCH
+NBG
+MK
+NF
+KP
+CZF
+IZF
+HoTT
+∞-topos
+(∞,1)-category
+Hom(C, D)
+Fun(C, D)
+C^{op}
+C × D
+C/c
+C/F
+Δ: C → C × C
+Σ: C × C → C
+lim F
+colim F
+F ⊣ G
+η: 1_C ⇒ GF
+ε: FG ⇒ 1_D
+Lan_F(G)
+Ran_F(G)
+[C, Set]
+y: C → [C^{op}, Set]
+Sh(X)
+Psh(X)
+τ: Psh(X) → Sh(X)
+Ω^X
+Sub(X)
+⊤
+⊥
+¬¬X → X
+X → ¬¬X
+□X
+◊X
+∇X
+X ⊗ Y
+X ⊸ Y
+X^Y
+!X
+?X
+&X
+⊕X
+1
+0
+I
+⊗: C × C → C
+α: (X ⊗ Y) ⊗ Z ≅ X ⊗ (Y ⊗ Z)
+λ: I ⊗ X ≅ X
+ρ: X ⊗ I ≅ X
+β: X ⊗ Y ≅ Y ⊗ X
+[X, Y]
+ev: [X, Y] ⊗ X → Y
+Tr(f)
+dim(X)
+χ(f)
+Z(C)
+Ω^n C
+B^n C
+K(C, n)
+HC(C)
+HH(C)
+THH(C)
+TC(C)
+K(C)
+G(C)
+W(C)
+Perf(C)
+D^b(C)
+D(QCoh(X))
+Coh(X)
+Vect(X)
+Mod(R)
+Ch(C)
+s𝒜b
+Sp
+Sp^Σ
+S^0
+S^n
+Ω^∞
+Σ^∞
+π_* ^s
+π_n ^s(X)
+[X, Y]_*
+{X, Y}
+X ∧ Y
+X ∨ Y
+X → Y
+hofib(f)
+hocofib(f)
+holim F
+hocolim F
+RHom(X, Y)
+X ⊗^L Y
+Rf_*
+Lf^*
+RΓ
+RlimF
