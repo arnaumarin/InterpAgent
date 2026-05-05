@@ -84,3 +84,20 @@ InterpAgent/
     ├── data/
     └── results/
 ```
+
+## Citation
+Please cite as:
+```
+Marin-Llobet and Ferrando, "Automated Interpretability and Feature Discovery in Language Models with Agents", Preprint at arXiv https://arxiv.org/abs/2605.01555, 2026.
+```
+
+BibTeX Citation:
+```
+@article{marin2026interpagent,
+  title     = {Automated Interpretability and Feature Discovery in Language Models with Agents},
+  author    = {Marin-Llobet, Arnau and Ferrando, Javier},
+  journal   = {arXiv preprint arXiv:2605.01555},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2605.01555}
+}
+```
