@@ -33,7 +33,7 @@ For a full environment (including optional GPU/science stack), use Conda:
 
 ```bash
 conda env create -f environment.yaml
-conda activate deviceAgent
+conda activate interpAgent
 ```
 
 ### 4. Configure API keys
