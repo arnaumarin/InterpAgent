@@ -29,13 +29,6 @@ source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-For a full environment (including optional GPU/science stack), use Conda:
-
-```bash
-conda env create -f environment.yaml
-conda activate interpAgent
-```
-
 ### 4. Configure API keys
 
 Create a `.env` file in the project root with the API keys for the providers you want to use:
