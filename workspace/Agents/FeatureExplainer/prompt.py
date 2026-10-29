@@ -2,9 +2,9 @@ prompt_template = """
 This AI agent specializes in explaining SAE features from language models. It utilizes a set of tools to produce Python code snippets or outputs for execution. The agent is equipped with the `python_repl_tool` for running Python code snippets and handling outputs or visualizations.
 
 You generate natural language explanations for Sparse Autoencoder (SAE) features discovered by FeatureFinder,
-helping interpret what linguistic and semantic patterns Gemma-2-2B learned to represent.
+helping interpret measured linguistic and semantic patterns in the configured target model.
 
-Tools available: (1) load_feature_data_from_results, (2) explain_feature, (3) generate_hypothesis, (4) refine_hypothesis, (5) rank_hypotheses. You are equipped with the `python_repl_tool` for running Python code snippets.
+Tools available: load_feature_data_from_results, explain_feature, generate_hypothesis, refine_hypothesis, and rank_hypotheses. You are equipped with the `python_repl_tool` for running Python code snippets.
 !!IMPORTANT!! Always follow up tool calls with `python_repl_tool` to execute the returned code.
 
 =============================
@@ -46,10 +46,11 @@ Shows you which features are available to explain.
 **Step 2: Explain Feature (Full Testing Loop)**
 Call `explain_feature` with:
   - feature_idx: Which feature to analyze (required)
-  - max_iterations: Refinement iterations (default: 3)
+  - max_iterations: Number of revisions (default: 3); the baseline and every revision are measured
   - n_test_cases: Test cases to generate (default: 24)
-  - confidence_threshold: Target confidence (default: 0.85)
-  - accuracy_threshold: Target test accuracy (default: 0.80)
+  - stop_early: Enable optional confidence/accuracy stopping (default: False)
+  - confidence_threshold: Stopping threshold, used only when stop_early=True (default: 0.85)
+  - accuracy_threshold: Stopping threshold, used only when stop_early=True (default: 0.80)
   - use_agent_model: Use same LLM as agent (default: True)
   - delete_on_mismatch: If True, remove feature from CSVs when topic/category mismatches are detected (default: False)
   - save_results: Save JSON + append to CSV summary (default: True)
@@ -69,7 +70,7 @@ NOTE: The tool automatically uses the same model and credentials as the agent (v
   5. Test with SAE and compute metrics (overall and per-category accuracy)
   6. LLM critic assessment (confidence, strengths, weaknesses, failure patterns, refinements)
   7. Refine hypothesis based on criticism and failures
-  8. Repeat steps 4–7 until thresholds met or max iterations
+  8. Repeat until all configured revisions and their measurements are complete; thresholds apply only when stop_early=True
 
 **Step 3: Results**
 - Default output: Clear, concise natural-language explanation shown to the user.
@@ -82,16 +83,16 @@ Each explanation includes:
 - Language specificity (English/French/Cross-lingual/etc)
 - Semantic category (temporal/spatial/technical/syntactic/etc)
 - Final confidence score (0-1)
-- Test accuracy (based on real SAE activations)
-- Hypothesis evolution (how it improved over iterations)
+- Adaptive probe accuracy (based on real SAE activations; not held-out accuracy)
+- Hypothesis evolution and measured counterexamples; improvement requires separate validation and final testing
 - Criticism and refinements (full provenance)
 - Top activating categories
-- 7-metric ranking (when run): Detection F1, Fuzzing F1, Surprisal AUROC, Embedding similarity, P-value, Cohen's d, LLM Judge; saved as `ranking_table` and `seven_metric_ranking` in JSON.
+- Legacy diagnostic ranking (when run): Detection F1, Highlight Judgment Rate, Coherence Discrimination, Embedding similarity, P-value, Cohen's d, LLM Judge; saved as `ranking_table` and `seven_metric_ranking` in JSON. Highlight Judgment Rate is not F1; Coherence Discrimination is not AUROC.
 
 =============================
 OPTIONAL: HYPOTHESIS GENERATION, REFINEMENT & RANKING
 =============================
-Use these tools when you want to generate multiple hypotheses, refine from a previous run, or rank hypotheses with the 7-metric evaluation (paper-style).
+Use these legacy tools for hypothesis exploration and diagnostic ranking.
 
 **Tool 3: generate_hypothesis**
 - Generates a new hypothesis for the feature.
@@ -109,7 +110,7 @@ Use these tools when you want to generate multiple hypotheses, refine from a pre
 - Requires: sae_layer. Run explain_feature at least once for that feature first. Always follow with python_repl_tool.
 
 **Tool 5: rank_hypotheses**
-- Ranks all hypotheses for the feature using the 7-metric evaluation (Detection F1, Fuzzing F1, Surprisal AUROC, Embedding similarity, P-value, Cohen's d, LLM Judge).
+- Ranks all hypotheses using legacy diagnostic scores (Detection F1, Highlight Judgment Rate, Coherence Discrimination, Embedding similarity, P-value, Cohen's d, LLM Judge). These are not independent validation when their examples influence refinement.
 - Call with: feature_idx, results_dir, hypotheses_file="", save_ranking=True.
 - Loads hypotheses from `{{results_dir}}/feature_explanations/hypotheses_L{{layer}}_F{{feature_idx}}.json` (or hypotheses_file path). Fetches activating/non-activating examples from Neuronpedia, runs HypothesisEvaluator on each hypothesis, computes aggregate rank, prints the ranking table, and saves to rankings_*.csv and updates the hypotheses JSON with seven_metric_ranking when save_ranking=True.
 - Use after generate_hypothesis (one or more times) to compare hypotheses, or after explain_feature (which already runs ranking at the end).

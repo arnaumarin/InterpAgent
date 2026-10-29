@@ -29,29 +29,29 @@ from Agents.FeatureExplainer.modules.feature_explainer import load_feature_data
 
 results_dir = r"{results_dir}"
 
-print(f"\n{'='*70}")
+print(f"\\n{'='*70}")
 print("LOADING FEATURE DATA FROM FEATUREFINDER RESULTS")
 print('='*70)
-print(f"Results directory: {results_dir}\n")
+print(f"Results directory: {results_dir}\\n")
 
 feature_data = load_feature_data(results_dir)
 
 if feature_data is not None:
-    print(f"\n✓ Feature data loaded successfully!")
-    print(f"  Total features: {len(feature_data)}")
-    print(f"  Unique features: {feature_data['feature_idx'].nunique()}")
-    print(f"  Categories: {', '.join(feature_data['category'].unique())}")
-    print(f"\n{feature_data.head()}\n")
+    print(f"\\n✓ Feature data loaded successfully!")
+    print(f"  Total features: {{len(feature_data)}}")
+    print(f"  Unique features: {{feature_data['feature_idx'].nunique()}}")
+    print(f"  Categories: {{', '.join(feature_data['category'].unique())}}")
+    print(f"\\n{{feature_data.head()}}\\n")
     
     # Extract layer from results directory name
     import re
-    layer_match = re.search(r'saeL(\d+)', str(results_dir))
+    layer_match = re.search(r'saeL(\\d+)', str(results_dir))
     if layer_match:
         sae_layer = int(layer_match.group(1))
-        print(f"  SAE Layer: {sae_layer}")
+        print(f"  SAE Layer: {{sae_layer}}")
     else:
         sae_layer = 0
-        print(f"  SAE Layer: {sae_layer} (default)")
+        print(f"  SAE Layer: {{sae_layer}} (default)")
 else:
     print("❌ Failed to load feature data")
 
@@ -68,10 +68,11 @@ def explain_feature(
     confidence_threshold: float = 0.85,
     accuracy_threshold: float = 0.80,
     use_agent_model: bool = True,
-    cases_per_type: int = 100,
+    cases_per_type: int = 0,
     delete_on_mismatch: bool = False,
     verbose: bool = False,
-    save_results: bool = True
+    save_results: bool = True,
+    stop_early: bool = False
 ) -> str:
     """
     Rigorous SAE feature explanation with hypothesis/test/refine loop.
@@ -87,8 +88,10 @@ def explain_feature(
     
     Parameters:
         - feature_idx: Feature index to explain
-        - max_iterations: Maximum refinement iterations (default: 3)
+        - max_iterations: Number of revisions; the baseline and every revision are tested
+        - stop_early: Optional adaptive-probe stopping (default False); not held-out validation
         - n_test_cases: Number of test cases to generate (default: 24)
+        - cases_per_type: Explicit per-class override; 0 divides n_test_cases equally across four classes
         - confidence_threshold: Target confidence level (default: 0.85)
         - accuracy_threshold: Target test accuracy (default: 0.80)
         - use_agent_model: Use same LLM/credentials as the agent (default: True)
@@ -128,6 +131,7 @@ from Agents.FeatureExplainer.modules.feature_explainer import (
     generate_hypothesis_from_neuronpedia,
     generate_test_cases,
     SAEInterface,
+    calibrated_sae_threshold,
     criticize_hypothesis,
     refine_hypothesis,
     generate_final_report,
@@ -170,6 +174,16 @@ cases_per_type = {cases_per_type}
 delete_on_mismatch = {delete_on_mismatch}
 verbose = {verbose}
 save_results = {save_results}
+if not 0 <= max_iterations <= 50:
+    raise ValueError("max_iterations must be between 0 and 50")
+if cases_per_type < 0:
+    raise ValueError("cases_per_type must be nonnegative")
+if cases_per_type == 0:
+    if n_test_cases < 4 or n_test_cases % 4:
+        raise ValueError("n_test_cases is a total and must be a positive multiple of four")
+    cases_per_type = n_test_cases // 4
+else:
+    n_test_cases = 4 * cases_per_type
 
 # Configure logging verbosity
 from builtins import print as _print
@@ -225,17 +239,17 @@ if feature_data_np:
         }}
 
         judge_prompt = (
-            "You are an expert judge determining whether an SAE feature relates to the target topics.\n"
-            "Assess RELATION to ANY of the studied topics using: (1) activation text previews, (2) top logit tokens.\n"
-            "Return strict JSON with keys: is_related (boolean), score (0-1), explanation (short).\n\n"
+            "You are an expert judge determining whether an SAE feature relates to the target topics.\\n"
+            "Assess RELATION to ANY of the studied topics using: (1) activation text previews, (2) top logit tokens.\\n"
+            "Return strict JSON with keys: is_related (boolean), score (0-1), explanation (short).\\n\\n"
             + json.dumps(judge_payload, indent=2)
         )
 
         resp = openai_client.chat.completions.create(
             model=llm_model,
             messages=[
-                {"role": "system", "content": "You are a precise evaluator for topic alignment of SAE features."},
-                {"role": "user", "content": judge_prompt},
+                {{"role": "system", "content": "You are a precise evaluator for topic alignment of SAE features."}},
+                {{"role": "user", "content": judge_prompt}},
             ],
             temperature=0,
             max_tokens=300,
@@ -256,9 +270,9 @@ if feature_data_np:
             print("Reason:", explanation)
 
         if not is_related:
-            _print("\nFeature judged NOT related to the studied topics. Stopping before hypothesis generation.")
+            _print("\\nFeature judged NOT related to the studied topics. Stopping before hypothesis generation.")
             if delete_on_mismatch:
-                _print("\nDeletion requested (delete_on_mismatch=True). Removing from top_markers CSVs...")
+                _print("\\nDeletion requested (delete_on_mismatch=True). Removing from top_markers CSVs...")
                 results_path = Path(results_dir)
                 csv_paths = list(results_path.glob("top_markers_*_saeL*.csv"))
                 removed_counts = {{}}
@@ -283,20 +297,20 @@ if feature_data_np:
                 else:
                     _print("No matching rows found to remove in marker CSVs.")
             else:
-                _print("\nIf you want to remove this feature from marker CSVs, rerun with delete_on_mismatch=True.")
+                _print("\\nIf you want to remove this feature from marker CSVs, rerun with delete_on_mismatch=True.")
             raise SystemExit(0)
     except Exception as e:
-        _print(f"Warning: Early topic alignment LLM check failed: {e}")
+        _print(f"Warning: Early topic alignment LLM check failed: {{e}}")
 
-    print(f"\n{'='*70}")
+    print(f"\\n{'='*70}")
     print("PHASE 1B: INITIAL HYPOTHESIS GENERATION")
     print('='*70)
     num_acts = len(activations) if activations else 0
-    print(f"Top Activations: {num_acts}")
+    print(f"Top Activations: {{num_acts}}")
     if num_acts == 0:
-        print("No activation examples on Neuronpedia (\"No Known Activations\"). Using logits-only signal.\n")
+        print("No activation examples on Neuronpedia (\\"No Known Activations\\"). Using logits-only signal.\\n")
     else:
-        print(f"   Top activation: {activations[0]['max_activation_value']:.2f}\n")
+        print(f"   Top activation: {{activations[0]['max_activation_value']:.2f}}\\n")
     
     current_hypothesis = generate_hypothesis_from_neuronpedia(
         activations=activations or [],
@@ -321,9 +335,9 @@ if not current_hypothesis:
 if not current_hypothesis:
     print("❌ Failed to generate initial hypothesis")
 else:
-    print(f"\n✓ Initial hypothesis:")
-    print(f"  {current_hypothesis.description}")
-    print(f"  Confidence: {current_hypothesis.confidence:.0%}")
+    print(f"\\n✓ Initial hypothesis:")
+    print(f"  {{current_hypothesis.description}}")
+    print(f"  Confidence: {{current_hypothesis.confidence:.0%}}")
     
     # Early validation: ensure hypothesis aligns with FeatureFinder categories
     try:
@@ -342,12 +356,12 @@ else:
             cat in hyp_desc for cat in marker_categories
         )
         is_related = is_lang_related or is_sem_related
-        print("\nCategory alignment check:")
+        print("\\nCategory alignment check:")
         print(f"  FeatureFinder categories: {{sorted(marker_categories)}}")
         print(f"  Hypothesis language: '{{current_hypothesis.language_specificity}}' | semantic: '{{current_hypothesis.semantic_category}}'")
         print(f"  Related: {{'YES' if is_related else 'NO'}}")
         if not is_related:
-            print("\nHypothesis not aligned with FeatureFinder categories.")
+            print("\\nHypothesis not aligned with FeatureFinder categories.")
             if delete_on_mismatch:
                 print("Deletion requested (delete_on_mismatch=True). Removing from top_markers CSVs...")
                 results_path = Path(results_dir)
@@ -382,17 +396,17 @@ else:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_file = output_dir / f"feature_L{{sae_layer}}_F{{feature_idx}}_{{timestamp}}_rejected.json"
                 with open(output_file, 'w') as f:
-                    json.dump({
-                        'feature_id': f"L{sae_layer}F{feature_idx}",
+                    json.dump({{
+                        'feature_id': f"L{{sae_layer}}F{feature_idx}",
                         'status': 'rejected_due_to_mismatch',
                         'marker_categories': sorted(marker_categories),
                         'hypothesis': current_hypothesis.to_dict(),
-                    }, f, indent=2)
+                    }}, f, indent=2)
                 print(f"Rejection saved to: {{output_file}}")
             print("Aborting explanation for this feature due to mismatch.")
             raise SystemExit(0)
     except Exception as e:
-        print(f"⚠️  Category alignment check failed: {e}")
+        print(f"⚠️  Category alignment check failed: {{e}}")
     
     all_hypotheses = [current_hypothesis]
     iteration_metrics = []  # Track metrics for each iteration
@@ -402,7 +416,13 @@ else:
     print("PHASE 2: INITIALIZING SAE")
     print('='*70)
     
-    sae_interface = SAEInterface(layer=sae_layer, feature_idx=feature_idx)
+    # Firing threshold on the corrected activation scale: a fraction of the feature's
+    # top Neuronpedia exemplar activation when available (see calibrated_sae_threshold).
+    _np_acts = globals().get('activations') or []
+    _ref_max = max([(a.get('max_activation_value') or 0.0) for a in _np_acts], default=None)
+    sae_threshold, sae_threshold_note = calibrated_sae_threshold(_ref_max)
+    print(f"  Firing threshold: {{sae_threshold:.3f}} ({{sae_threshold_note}})")
+    sae_interface = SAEInterface(layer=sae_layer, feature_idx=feature_idx, threshold=sae_threshold)
     sae_interface.initialize()
     
     # Phase 3: Iterative testing and refinement
@@ -415,11 +435,11 @@ else:
     print("OPTIMIZATION TRAJECTORY")
     print('='*70)
     
-    while iteration < max_iterations:
+    while iteration < max_iterations + 1:
         iteration += 1
         
         print(f"\\n{'='*70}")
-        print(f"PHASE 3.{{iteration}}: TEST → CRITICIZE → REFINE (Iteration {{iteration}}/{{max_iterations}})")
+        print(f"PHASE 3.{{iteration}}: MEASURED PROBE ROUND {{iteration}}/{{max_iterations + 1}} (revision {{current_hypothesis.iteration}})")
         print('='*70)
         
         # Extract short description for trajectory display
@@ -467,7 +487,7 @@ else:
             'by_category': metrics.get('by_category', {{}})
         }})
         
-        print(f"\n📊 TEST RESULTS:")
+        print(f"\\n📊 TEST RESULTS:")
         print(f"  Overall Accuracy: {{metrics['overall_accuracy']:.1%}} ({{metrics['correct_predictions']}}/{{metrics['total_cases']}})")
         total_test_cases_run += metrics['total_cases']
         total_correct_predictions += metrics['correct_predictions']
@@ -508,7 +528,7 @@ else:
                 print(f"    ✗ {{w}}")
         
         # Check if we've succeeded
-        if (metrics['overall_accuracy'] >= accuracy_threshold and 
+        if ({stop_early!r} and metrics['overall_accuracy'] >= accuracy_threshold and 
             current_hypothesis.confidence >= confidence_threshold):
             
             print(f"\\n🎉 SUCCESS! High confidence achieved!")
@@ -517,7 +537,9 @@ else:
             break
         
         # Refine if not last iteration using agent's model
-        if iteration < max_iterations and criticism:
+        if iteration <= max_iterations and not criticism:
+            raise RuntimeError("Criticism failed; do not report this as a completed refinement run")
+        if iteration <= max_iterations and criticism:
             print("\\n✨ Refining hypothesis...")
             refined_hypothesis = refine_hypothesis(
                 current_hypothesis,
@@ -536,24 +558,20 @@ else:
                 current_hypothesis = refined_hypothesis
                 all_hypotheses.append(current_hypothesis)
             else:
-                print("⚠️  Refinement failed")
+                raise RuntimeError("Refinement failed; preserve the incomplete run")
     
     # Phase 3.5: Comprehensive evaluation and ranking (7 metrics)
     ranked_hypotheses_with_evals = []
     if all_hypotheses and final_metrics and iteration_metrics:
         print(f"\\n{'='*70}")
-        print("PHASE 3.5: COMPREHENSIVE EVALUATION & RANKING (7 Metrics)")
+        print("PHASE 3.5: ADAPTIVE-PROBE DIAGNOSTICS (not independent selection)")
         print('='*70)
         # Build activating / non-activating examples and scores from last test run
-        activating_texts = [r.test_case.text for r in test_results if r.test_case.should_activate]
-        non_activating_texts = [r.test_case.text for r in test_results if not r.test_case.should_activate]
-        activating_scores = np.array([r.actual_activation for r in test_results if r.test_case.should_activate], dtype=float)
-        non_activating_scores = np.array([r.actual_activation for r in test_results if not r.test_case.should_activate], dtype=float)
-        if len(activating_scores) < 2:
-            activating_scores = np.array([0.0, 0.0])
-        if len(non_activating_scores) < 2:
-            non_activating_scores = np.array([0.0, 0.0])
-        if activating_texts and non_activating_texts:
+        activating_texts = [r.test_case.text for r in test_results if r.actual_activation > sae_threshold]
+        non_activating_texts = [r.test_case.text for r in test_results if r.actual_activation <= sae_threshold]
+        activating_scores = np.array([r.actual_activation for r in test_results if r.actual_activation > sae_threshold], dtype=float)
+        non_activating_scores = np.array([r.actual_activation for r in test_results if r.actual_activation <= sae_threshold], dtype=float)
+        if len(activating_scores) >= 2 and len(non_activating_scores) >= 2:
             evaluator = HypothesisEvaluator(openai_client, model=llm_model)
             for h in all_hypotheses:
                 ev = evaluator.evaluate(
@@ -653,13 +671,13 @@ else:
                 writer = csv.writer(csvfile)
                 if not csv_exists:
                     writer.writerow(["feature_id", "explanation", "confidence"]) 
-                writer.writerow([report.feature_id, current_hypothesis.description, f"{current_hypothesis.confidence:.4f}"])
+                writer.writerow([report.feature_id, current_hypothesis.description, f"{{current_hypothesis.confidence:.4f}}"])
             print(f"Updated summary CSV: {{summary_csv}}")
         except Exception as e:
             print(f"Failed updating summary CSV: {{e}}")
     
     # Emit a concise natural-language explanation
-    _print("\n" + "="*70)
+    _print("\\n" + "="*70)
     _print("SAE Feature Explanation - Final Summary")
     _print("="*70)
     _print(f"Feature: L{{sae_layer}} F{{feature_idx}}")
@@ -672,7 +690,7 @@ else:
         desc_short = iter_metric['description_short']
         score = iter_metric['test_accuracy']
         _print(f"  Turn {{i}}: {{desc_short}} → Score = {{score:.2f}}")
-    _print("="*70 + "\n")
+    _print("="*70 + "\\n")
 
 # Please use python_repl_tool to execute this code
 """

@@ -36,6 +36,28 @@ warnings.filterwarnings('ignore')
 
 from sae_lens import SAE  # <- pre-installed
 
+
+# --- SAE input hook policy ----------------------------------------------------
+# GemmaScope MLP dictionaries are trained on TransformerLens `blocks.L.hook_mlp_out`,
+# which on Gemma-2 is the MLP output *after* `post_feedforward_layernorm`. Hooking the
+# raw HF `mlp` module output (the historical behaviour) feeds the pre-norm vector to the
+# encoder. The default now hooks the post-norm module whenever the architecture has one.
+# Set INTERPAGENT_SAE_HOOK=legacy_mlp only to reproduce historical runs. Special tokens
+# (BOS/EOS/pad) are excluded from the activation matrix by default: the BOS activation is
+# text-independent and carries no category signal.
+SAE_HOOK_MODE = os.environ.get("INTERPAGENT_SAE_HOOK", "post_feedforward_layernorm")
+EXCLUDE_SPECIAL_TOKENS = os.environ.get("INTERPAGENT_SCORE_SPECIAL_TOKENS", "0") != "1"
+
+
+def resolve_sae_hook_module(layer_module):
+    """Return (module, name) whose forward output is the SAE input for this layer."""
+    if SAE_HOOK_MODE != "legacy_mlp" and hasattr(layer_module, "post_feedforward_layernorm"):
+        return layer_module.post_feedforward_layernorm, "post_feedforward_layernorm"
+    for name in ("mlp", "feed_forward", "block_sparse_moe"):
+        if hasattr(layer_module, name):
+            return getattr(layer_module, name), name
+    raise RuntimeError("No MLP-like submodule found to hook for SAE input")
+
 # Configure scanpy
 sc.settings.verbosity = 1
 sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -104,7 +126,10 @@ class CompleteNeuralAtlasPipeline:
         
         # Separate directories for different data types
         self.output_dir = f"{base_output_dir}_{token_suffix}_saeL{self.sae_layer_idx}_{self.sae_width_dir}"  # For figures and CSVs
-        self.processed_data_dir = f"/mnt/Storage7/atlas4llm/gemma2SAE/results_multitoken/google_gemma_2_2b_{token_suffix}_saeL{self.sae_layer_idx}_{self.sae_width_dir}/processed_data"  # For large processed data
+        # Large processed data: base directory is configurable (GEMMA_SAE_PROCESSED_BASE); the
+        # default keeps the historical machine-specific location so existing runs are unchanged.
+        processed_base = os.environ.get("GEMMA_SAE_PROCESSED_BASE", "/mnt/Storage7/atlas4llm/gemma2SAE").rstrip("/")
+        self.processed_data_dir = f"{processed_base}/results_multitoken/google_gemma_2_2b_{token_suffix}_saeL{self.sae_layer_idx}_{self.sae_width_dir}/processed_data"
         
         # Create both directories
         os.makedirs(self.output_dir, exist_ok=True)
@@ -252,10 +277,15 @@ class CompleteNeuralAtlasPipeline:
         print("\n[SAE] Loading SAE for the chosen layer only...")
         print(f"  -> release='{self.sae_release}', sae_id='{sae_id}'")
         try:
-            sae, cfg_dict, sparsity = SAE.from_pretrained(
+            loaded = SAE.from_pretrained(
                 release=self.sae_release,
                 sae_id=sae_id,
             )
+            # sae-lens < 5 returned (sae, cfg_dict, sparsity); newer versions return the SAE only.
+            if isinstance(loaded, tuple):
+                sae, cfg_dict, sparsity = loaded
+            else:
+                sae, cfg_dict, sparsity = loaded, getattr(loaded, "cfg", None), None
             # Keep SAE on CPU for now; we move it to the correct device inside the hook per-batch
             sae.eval()
             self.sae = sae
@@ -379,8 +409,10 @@ class CompleteNeuralAtlasPipeline:
                     padding=True,
                     truncation=True,
                     max_length=128,
-                    return_attention_mask=True
+                    return_attention_mask=True,
+                    return_special_tokens_mask=True
                 )
+                special_tokens_mask = inputs.pop("special_tokens_mask")
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 # Captured codes for this prompt
@@ -402,17 +434,9 @@ class CompleteNeuralAtlasPipeline:
 
                 # Locate target module to hook
                 layer_module = self.model.model.layers[target_layer_idx]
-                if hasattr(layer_module, 'mlp'):
-                    target_module = layer_module.mlp
-                    target_name = 'mlp'
-                elif hasattr(layer_module, 'feed_forward'):
-                    target_module = layer_module.feed_forward
-                    target_name = 'feed_forward'
-                elif hasattr(layer_module, 'block_sparse_moe'):
-                    target_module = layer_module.block_sparse_moe
-                    target_name = 'block_sparse_moe'
-                else:
-                    raise RuntimeError(f"[HOOK][FATAL] Could not find MLP-like submodule in layer {target_layer_idx}")
+                target_module, target_name = resolve_sae_hook_module(layer_module)
+                if not codes_captured_once:
+                    print(f"[HOOK] SAE input = model.layers[{target_layer_idx}].{target_name} (mode={SAE_HOOK_MODE}; special tokens {'excluded' if EXCLUDE_SPECIAL_TOKENS else 'included'})")
 
                 # Register one hook
                 hook = target_module.register_forward_hook(hook_fn)
@@ -451,6 +475,8 @@ class CompleteNeuralAtlasPipeline:
                     for token_pos in range(seq_len):
                         if attention_mask[0, token_pos] == 0:
                             continue
+                        if EXCLUDE_SPECIAL_TOKENS and int(special_tokens_mask[0, token_pos]) == 1:
+                            continue
                         token_feat = torch.as_tensor(codes_cpu[0, token_pos, :]).float().numpy()  # [d_sae]
                         all_activations.append(token_feat)
                         all_prompts.append(prompt[:100] + "..." if len(prompt) > 100 else prompt)
@@ -464,10 +490,13 @@ class CompleteNeuralAtlasPipeline:
                     for token_pos in range(seq_len):
                         if attention_mask[0, token_pos] == 0:
                             continue
+                        if EXCLUDE_SPECIAL_TOKENS and int(special_tokens_mask[0, token_pos]) == 1:
+                            continue
                         token_feat = torch.as_tensor(codes_cpu[0, token_pos, :]).float().numpy()
                         sequence_activations.append(token_feat)
                     if sequence_activations:
-                        aggregated = self.aggregate_sequence_activations(sequence_activations, attention_mask)
+                        kept_mask = torch.ones(1, len(sequence_activations), dtype=attention_mask.dtype)
+                        aggregated = self.aggregate_sequence_activations(sequence_activations, kept_mask)
                         all_activations.append(aggregated)
                         all_prompts.append(prompt[:100] + "..." if len(prompt) > 100 else prompt)
                         all_categories.append(category)
@@ -550,7 +579,11 @@ class CompleteNeuralAtlasPipeline:
         return activation_matrix, prompt_metadata, neuron_metadata
 
     # ---------- Scanpy & downstream (logic same; features == SAE codes) ----------
-    def run_scanpy_analysis(self, activation_matrix, prompt_metadata, neuron_metadata, processed_data_dir):
+    def run_scanpy_analysis(self, activation_matrix, prompt_metadata, neuron_metadata, processed_data_dir, algorithm: str = "leiden"):
+        # `algorithm` selects the community-detection step (pluggable):
+        #   'leiden'  -> sc.tl.leiden (default; igraph/leidenalg backend)
+        #   'louvain' -> sc.tl.louvain(flavor='taynaud')  (python-louvain backend)
+        # Result is mirrored to adata.obs['leiden'] for backward-compat with downstream code.
         print(f"\nSTEP 2: SCANPY DIFFERENTIAL EXPRESSION ANALYSIS (SAE features, layer={self.sae_layer_idx})")
         print("-" * 60)
 
@@ -610,8 +643,14 @@ class CompleteNeuralAtlasPipeline:
         print("2.5 UMAP embedding (3D)...")
         sc.tl.umap(adata, n_components=3, min_dist=0.1, spread=1.0, random_state=42)
 
-        print("2.6 Leiden clustering...")
-        sc.tl.leiden(adata, resolution=0.5)
+        print(f"2.6 {algorithm.capitalize()} clustering...")
+        if algorithm == "louvain":
+            sc.tl.louvain(adata, resolution=0.5, flavor="taynaud")
+            adata.obs["leiden"] = adata.obs["louvain"]   # mirror for downstream code
+        elif algorithm == "leiden":
+            sc.tl.leiden(adata, resolution=0.5)
+        else:
+            raise ValueError(f"Unknown clustering algorithm: {algorithm!r} (expected 'leiden' or 'louvain')")
 
         print("2.7 🎯 DIFFERENTIAL EXPRESSION ANALYSIS...")
         sc.tl.rank_genes_groups(

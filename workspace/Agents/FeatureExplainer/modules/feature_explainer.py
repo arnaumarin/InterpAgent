@@ -30,6 +30,53 @@ except ImportError:
     EMBEDDING_AVAILABLE = False
 
 
+# --- SAE input hook policy ----------------------------------------------------
+# GemmaScope MLP dictionaries are trained on TransformerLens `blocks.L.hook_mlp_out`,
+# which on Gemma-2 is the MLP output *after* `post_feedforward_layernorm`. Hooking the
+# raw HF `mlp` module output (the historical behaviour) feeds the pre-norm vector to the
+# encoder, i.e. a representation the dictionary was not trained on. The default now
+# hooks the post-norm module whenever the architecture has one. Set
+# INTERPAGENT_SAE_HOOK=legacy_mlp only to reproduce historical runs.
+# Special tokens (BOS/EOS/pad) are excluded from per-text maxima by default because the
+# BOS activation is text-independent and can exceed the firing threshold for every input.
+SAE_HOOK_MODE = os.environ.get("INTERPAGENT_SAE_HOOK", "post_feedforward_layernorm")
+EXCLUDE_SPECIAL_TOKENS = os.environ.get("INTERPAGENT_SCORE_SPECIAL_TOKENS", "0") != "1"
+
+
+DEFAULT_SAE_THRESHOLD = 4.0
+SAE_THRESHOLD_FRACTION = float(os.environ.get("INTERPAGENT_SAE_THRESHOLD_FRACTION", "0.25"))
+
+
+def calibrated_sae_threshold(reference_max=None, default=DEFAULT_SAE_THRESHOLD):
+    """Firing threshold for SAEInterface, on the corrected activation scale.
+
+    Priority: INTERPAGENT_SAE_THRESHOLD (absolute override) > fraction of the feature's
+    reference maximum activation (e.g. the top Neuronpedia exemplar; fraction from
+    INTERPAGENT_SAE_THRESHOLD_FRACTION, default 0.25, matching the frozen-panel
+    calibration rule) > the historical constant `default`. Returns (threshold, note).
+    """
+    override = os.environ.get("INTERPAGENT_SAE_THRESHOLD")
+    if override:
+        return float(override), "absolute override from INTERPAGENT_SAE_THRESHOLD"
+    try:
+        ref = float(reference_max) if reference_max is not None else None
+    except (TypeError, ValueError):
+        ref = None
+    if ref is not None and ref > 0:
+        return SAE_THRESHOLD_FRACTION * ref, f"{SAE_THRESHOLD_FRACTION:g} x reference max activation {ref:.3f}"
+    return float(default), f"no reference activation available; historical constant {default:g} (likely mis-scaled; supply a reference max)"
+
+
+def resolve_sae_hook_module(layer_module):
+    """Return (module, name) whose forward output is the SAE input for this layer."""
+    if SAE_HOOK_MODE != "legacy_mlp" and hasattr(layer_module, "post_feedforward_layernorm"):
+        return layer_module.post_feedforward_layernorm, "post_feedforward_layernorm"
+    for name in ("mlp", "feed_forward", "block_sparse_moe"):
+        if hasattr(layer_module, name):
+            return getattr(layer_module, name), name
+    raise RuntimeError("No MLP-like submodule found to hook for SAE input")
+
+
 @dataclass
 class FeatureHypothesis:
     """Hypothesis about what an SAE feature detects."""
@@ -77,13 +124,13 @@ class ComprehensiveEvaluation:
     p_value: float
     effect_size: float
     llm_judge_score: float
-    detection_rank: int = 0
-    fuzzing_rank: int = 0
-    surprisal_rank: int = 0
-    embedding_rank: int = 0
-    p_value_rank: int = 0
-    effect_size_rank: int = 0
-    llm_judge_rank: int = 0
+    detection_rank: float = 0
+    fuzzing_rank: float = 0
+    surprisal_rank: float = 0
+    embedding_rank: float = 0
+    p_value_rank: float = 0
+    effect_size_rank: float = 0
+    llm_judge_rank: float = 0
     average_rank: float = 0.0
     dominance_score: int = 0
     rank_score: float = 0.0
@@ -114,8 +161,8 @@ class HypothesisEvaluator:
                 max_tokens=500,
             )
             return (resp.choices[0].message.content or "").strip()
-        except Exception:
-            return ""
+        except Exception as error:
+            raise RuntimeError("Hypothesis evaluation failed; no substitute score was produced") from error
 
     def _fallback_detection(
         self, hypothesis: str, activating: List[str], non_activating: List[str]
@@ -297,8 +344,8 @@ Rating:"""
 # Default metric specs for aggregate_rank (column names and direction)
 METRIC_SPECS_RANK = {
     "DetF1": "high",
-    "FuzzF1": "high",
-    "SurpAUROC": "high",
+    "HighlightJudgmentRate": "high",
+    "CoherenceDiscrimination": "high",
     "Embed": "high",
     "Judge": "high",
     "p_val": "low",
@@ -321,7 +368,7 @@ def aggregate_rank(
         One row per hypothesis/candidate. Must contain columns for each key in metric_specs.
     metric_specs : dict
         Mapping metric_name -> "high" or "low" for direction.
-        Example: {"DetF1": "high", "FuzzF1": "high", "SurpAUROC": "high", "Embed": "high", "Judge": "high", "p_val": "low", "d": "high"}
+        Use METRIC_SPECS_RANK for the legacy diagnostic scores and their directions.
     id_cols : tuple[str]
         Columns to keep for identification in the output.
     ties_method : str
@@ -333,6 +380,8 @@ def aggregate_rank(
         Includes per-metric rank columns r_<metric>, AvgRank, and final Rank.
     """
     out = df.copy()
+    if not metric_specs or any(direction not in ("high", "low") for direction in metric_specs.values()):
+        raise ValueError("Declare at least one metric with direction 'high' or 'low'")
 
     def _to_numeric(series: pd.Series) -> pd.Series:
         s = series.copy()
@@ -346,8 +395,9 @@ def aggregate_rank(
         if m not in out.columns:
             raise ValueError(f"Metric '{m}' not found in DataFrame. Columns: {list(out.columns)}")
         vals = _to_numeric(out[m])
-        if vals.isna().any():
-            missing = out.loc[vals.isna()]
+        invalid = vals.isna() | ~np.isfinite(vals)
+        if invalid.any():
+            missing = out.loc[invalid]
             raise ValueError(
                 f"Metric '{m}' has non-numeric / missing values in rows:\n{missing[list(id_cols) + [m]].to_string(index=False)}"
             )
@@ -370,20 +420,23 @@ def aggregate_rank(
 def results_to_ranking_df(
     results: List[Tuple[str, ComprehensiveEvaluation]],
 ) -> pd.DataFrame:
-    """Build a DataFrame from (source, ComprehensiveEvaluation) with columns Source, Hypothesis, DetF1, FuzzF1, SurpAUROC, Embed, Judge, p_val, d."""
+    """Export diagnostic scores at full precision, with legacy CSV aliases."""
     rows = []
     for source, e in results:
-        p_val = "<0.001" if e.p_value < 0.001 else round(e.p_value, 6)
         rows.append({
             "Source": source,
-            "Hypothesis": (e.hypothesis_description or "")[:500],
-            "DetF1": round(e.detection_score, 4),
-            "FuzzF1": round(e.fuzzing_score, 4),
-            "SurpAUROC": round(e.surprisal_score, 4),
-            "Embed": round(e.embedding_score, 4),
-            "Judge": round(e.llm_judge_score, 4),
-            "p_val": p_val,
-            "d": round(e.effect_size, 4),
+            "Hypothesis": e.hypothesis_description or "",
+            "DetF1": float(e.detection_score),
+            "HighlightJudgmentRate": float(e.fuzzing_score),
+            "CoherenceDiscrimination": float(e.surprisal_score),
+            # Historical column aliases are retained for reading older exports.
+            # These values are judgment/coherence scores, not F1 or ROC-AUC.
+            "FuzzF1": float(e.fuzzing_score),
+            "SurpAUROC": float(e.surprisal_score),
+            "Embed": float(e.embedding_score),
+            "Judge": float(e.llm_judge_score),
+            "p_val": float(e.p_value),
+            "d": float(e.effect_size),
         })
     return pd.DataFrame(rows)
 
@@ -411,11 +464,7 @@ def compute_rankings(
     n = len(results)
     evals = [r[1] for r in results]
     if not SCIPY_AVAILABLE:
-        for i, (_, e) in enumerate(results):
-            e.average_rank = 1.0
-            e.dominance_score = 0
-            e.rank_score = 1.0
-        return results
+        raise RuntimeError("Ranking requires scipy; refusing fabricated tied ranks")
     metrics = {
         "detection": [e.detection_score for e in evals],
         "fuzzing": [e.fuzzing_score for e in evals],
@@ -428,27 +477,26 @@ def compute_rankings(
     rankings: Dict[str, List[float]] = {}
     for metric_name, scores in metrics.items():
         scores_array = np.array(scores, dtype=float)
-        nan_mask = np.isnan(scores_array)
+        if not np.isfinite(scores_array).all():
+            raise ValueError(f"Incomplete/nonfinite {metric_name} scores; cannot rank candidates")
         if metric_name == "p_value":
-            scores_clean = np.where(nan_mask, np.inf, scores_array)
-            ranks = rankdata(scores_clean, method="average")
+            ranks = rankdata(scores_array, method="average")
         else:
-            scores_clean = np.where(nan_mask, -np.inf, scores_array)
-            ranks = rankdata(-scores_clean, method="average")
+            ranks = rankdata(-scores_array, method="average")
         rankings[metric_name] = ranks.tolist()
     for i, (_, eval_obj) in enumerate(results):
-        def safe_int_rank(rank_val: float) -> int:
-            if np.isnan(rank_val) or np.isinf(rank_val):
-                return n
-            return int(rank_val)
+        def safe_rank(rank_val: float) -> float:
+            if not np.isfinite(rank_val):
+                raise ValueError("Rank is undefined")
+            return float(rank_val)
 
-        eval_obj.detection_rank = safe_int_rank(rankings["detection"][i])
-        eval_obj.fuzzing_rank = safe_int_rank(rankings["fuzzing"][i])
-        eval_obj.surprisal_rank = safe_int_rank(rankings["surprisal"][i])
-        eval_obj.embedding_rank = safe_int_rank(rankings["embedding"][i])
-        eval_obj.p_value_rank = safe_int_rank(rankings["p_value"][i])
-        eval_obj.effect_size_rank = safe_int_rank(rankings["effect_size"][i])
-        eval_obj.llm_judge_rank = safe_int_rank(rankings["llm_judge"][i])
+        eval_obj.detection_rank = safe_rank(rankings["detection"][i])
+        eval_obj.fuzzing_rank = safe_rank(rankings["fuzzing"][i])
+        eval_obj.surprisal_rank = safe_rank(rankings["surprisal"][i])
+        eval_obj.embedding_rank = safe_rank(rankings["embedding"][i])
+        eval_obj.p_value_rank = safe_rank(rankings["p_value"][i])
+        eval_obj.effect_size_rank = safe_rank(rankings["effect_size"][i])
+        eval_obj.llm_judge_rank = safe_rank(rankings["llm_judge"][i])
         all_ranks = [
             eval_obj.detection_rank, eval_obj.fuzzing_rank, eval_obj.surprisal_rank,
             eval_obj.embedding_rank, eval_obj.p_value_rank, eval_obj.effect_size_rank, eval_obj.llm_judge_rank,
@@ -481,7 +529,8 @@ def print_ranking_analysis(
         return None
     ranked_df = rank_hypotheses_with_aggregate(results, metric_specs=metric_specs)
     print(f"\n{'='*100}")
-    print("RANKING (aggregate_rank: DetF1, FuzzF1, SurpAUROC, Embed, Judge, p_val, d)")
+    metrics = metric_specs if metric_specs is not None else METRIC_SPECS_RANK
+    print(f"DIAGNOSTIC RANKING (aggregate_rank: {', '.join(metrics)})")
     print(f"{'='*100}\n")
     display_cols = ["Rank", "Source", "Hypothesis", "AvgRank"]
     print(ranked_df[display_cols].to_string(index=False))
@@ -750,10 +799,11 @@ def save_hypotheses_and_rankings(
         data["seven_metric_ranking"] = [
             {
                 "source": src,
-                "hypothesis": (e.hypothesis_description or "")[:300],
+                "hypothesis": e.hypothesis_description or "",
                 "scores": {
-                    "DetF1": e.detection_score, "FuzzF1": e.fuzzing_score, "SurpAUROC": e.surprisal_score,
-                    "Embed": e.embedding_score, "Judge": e.llm_judge_score, "p_val": e.p_value if e.p_value >= 0.001 else "<0.001", "d": e.effect_size,
+                    "DetF1": e.detection_score, "HighlightJudgmentRate": e.fuzzing_score,
+                    "CoherenceDiscrimination": e.surprisal_score,
+                    "Embed": e.embedding_score, "Judge": e.llm_judge_score, "p_val": e.p_value, "d": e.effect_size,
                 },
             }
             for src, e in ranked_with_evals
@@ -1090,11 +1140,17 @@ class SAEInterface:
         
         sae_id = f"layer_{self.layer}/width_16k/canonical"
         print(f"  ⏳ Loading SAE: {sae_id}...")
-        self.sae, self.sae_cfg, self.sae_sparsity = SAE.from_pretrained(
+        loaded = SAE.from_pretrained(
             release="gemma-scope-2b-pt-mlp-canonical",
             sae_id=sae_id,
         )
+        # sae-lens < 5 returned (sae, cfg_dict, sparsity); newer versions return the SAE only.
+        if isinstance(loaded, tuple):
+            self.sae, self.sae_cfg, self.sae_sparsity = loaded
+        else:
+            self.sae, self.sae_cfg, self.sae_sparsity = loaded, getattr(loaded, "cfg", None), None
         self.sae.eval()
+        self.hook_name = None
         print(f"  ✓ SAE loaded\n")
     
     def get_feature_activation(self, text: str) -> float:
@@ -1108,8 +1164,10 @@ class SAEInterface:
             padding=True,
             truncation=True,
             max_length=128,
-            return_attention_mask=True
+            return_attention_mask=True,
+            return_special_tokens_mask=True
         )
+        special_tokens_mask = inputs.pop("special_tokens_mask")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         
         captured_codes = {"codes": None}
@@ -1124,32 +1182,43 @@ class SAEInterface:
                     codes = self.sae.encode(x32)
                     captured_codes["codes"] = codes.detach().cpu()
             except Exception as e:
-                print(f"⚠️  Error encoding: {e}")
+                raise RuntimeError("SAE encoding failed; no activation was measured") from e
         
+        hook = None
         try:
             layer_module = self.model.model.layers[self.layer]
-            target_module = getattr(layer_module, 'mlp', 
-                                  getattr(layer_module, 'feed_forward', None))
-            if target_module is None:
-                raise RuntimeError(f"No MLP found in layer {self.layer}")
+            target_module, target_name = resolve_sae_hook_module(layer_module)
+            if getattr(self, "hook_name", None) != target_name:
+                self.hook_name = target_name
+                print(f"  ✓ SAE input hook: model.layers[{self.layer}].{target_name} (mode={SAE_HOOK_MODE})")
             
             hook = target_module.register_forward_hook(hook_fn)
             with torch.no_grad():
                 _ = self.model(**inputs)
-            hook.remove()
         except Exception as e:
-            print(f"⚠️  Error in forward pass: {e}")
-            return 0.0
+            raise RuntimeError("Target-model forward failed; no activation was measured") from e
+        finally:
+            if hook is not None:
+                hook.remove()
         
         if captured_codes["codes"] is None:
-            return 0.0
+            raise RuntimeError("SAE hook produced no activation; refusing a substitute zero")
         
         try:
             codes = captured_codes["codes"]
             feature_activations = codes[0, :, self.feature_idx].numpy()
-            return float(np.max(feature_activations))
-        except Exception:
-            return 0.0
+            if EXCLUDE_SPECIAL_TOKENS:
+                keep = (inputs["attention_mask"][0].detach().cpu().numpy().astype(bool)
+                        & ~special_tokens_mask[0].numpy().astype(bool))
+                if not keep.any():
+                    raise ValueError("Input has no non-special scored tokens")
+                feature_activations = feature_activations[keep]
+            value = float(np.max(feature_activations))
+            if not np.isfinite(value):
+                raise ValueError("Measured activation is nonfinite")
+            return value
+        except Exception as error:
+            raise RuntimeError("Invalid measured activation; refusing a substitute zero") from error
     
     def test_hypothesis(self, test_cases: List[TestCase]) -> Tuple[List[TestResult], Dict]:
         """Test hypothesis using real SAE."""

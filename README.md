@@ -47,6 +47,23 @@ GOOGLE_BASE_URL=   # optional, for custom endpoint
 
 Do not commit `.env`; it is listed in `.gitignore`.
 
+### SAE activation hook and scoring flags
+
+Both agents read SAE inputs from the Gemma-2 MLP output **after** `post_feedforward_layernorm`
+(TransformerLens `blocks.L.hook_mlp_out`, the representation the GemmaScope MLP dictionaries were
+trained on) and exclude special tokens (BOS/EOS/pad) from per-text maxima and from the discovery
+activation matrix. Two environment variables control this:
+
+```bash
+# default: post_feedforward_layernorm; set to legacy_mlp only to reproduce historical runs
+export INTERPAGENT_SAE_HOOK=post_feedforward_layernorm
+# default: 0 (special tokens excluded); set to 1 to include them
+export INTERPAGENT_SCORE_SPECIAL_TOKENS=0
+```
+
+The code accepts both the old `sae-lens` API (`SAE.from_pretrained` returning a tuple) and the
+current one (returning the SAE object).
+
 ### 5. Run the app
 
 From the project root:
