@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # Configuration
     num_prompts_per_category = 2000  # Dataset size: 2000 prompts per category
-    token_statistic = "all_tokens"  # Options: "all_tokens", "mean_last_k", "max_last_k", "top_p_trimmed_mean"
+    token_statistic = "mean"  # Options: "mean", "max", "last_token", "all_tokens", "mean_last_k", "max_last_k", "top_p_trimmed_mean"
     last_k_tokens = 666  # Number of last tokens to consider
     top_p_trim = 0.5  # Fraction for top-p trimmed mean
     sae_layer_idx = 0  # SAE layer to analyze (default: 0)

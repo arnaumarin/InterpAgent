@@ -247,7 +247,7 @@ def run_neural_atlas_pipeline(
     results_dir: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/results_gemma2")),
     sae_layer_idx: int = 0,
     max_prompts_per_category: int = 500,
-    token_statistic: str = "all_tokens",
+    token_statistic: str = "mean",
     last_k_tokens: int = 666,
     top_p_trim: float = 0.5,
     run_permutation_test: bool = False,
@@ -269,7 +269,8 @@ def run_neural_atlas_pipeline(
         - results_dir: Path where results will be saved (optional, pipeline creates its own if empty)
         - sae_layer_idx: SAE layer index to analyze (0-25 for Gemma 2B)
         - max_prompts_per_category: Maximum number of prompts per category
-        - token_statistic: Token aggregation method ("all_tokens", "mean_last_k", "max_last_k", "top_p_trimmed_mean")
+        - token_statistic: Token aggregation method ("mean" (default), "max", "last_token", "all_tokens", "mean_last_k", "max_last_k", or "top_p_trimmed_mean").
+                           Marker statistics always use one row per prompt.
         - last_k_tokens: Number of last tokens to consider for aggregation
         - top_p_trim: Fraction for top-p trimmed mean
         - run_permutation_test: Whether to run permutation testing (slow)

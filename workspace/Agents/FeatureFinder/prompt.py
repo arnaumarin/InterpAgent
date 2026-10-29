@@ -36,7 +36,7 @@ Call `run_neural_atlas_pipeline` with:
   - results_dir: Where to save results; if empty, pipeline creates its own model-based directory
   - sae_layer_idx: SAE layer to analyze (0–25 for Gemma 2B, default: 0)
   - max_prompts_per_category: Max prompts per category (default: 500)
-  - token_statistic: "all_tokens", "mean_last_k", "max_last_k", or "top_p_trimmed_mean" (default: "all_tokens")
+  - token_statistic: "mean" (default), "max", "last_token", "all_tokens", "mean_last_k", "max_last_k", or "top_p_trimmed_mean". Marker statistics always use one row per prompt; with "all_tokens", tokens are averaged per prompt before testing
   - last_k_tokens: For mean/max_last_k (default: 666)
   - top_p_trim: For top_p_trimmed_mean (default: 0.5)
   - run_permutation_test: Set True for permutation validation (slower)
@@ -47,7 +47,8 @@ Call `run_neural_atlas_pipeline` with:
 Outputs (pipeline creates a timestamped subfolder under results_dir):
   - top_markers_{category}_saeL{layer}_{n}_prompts.csv — marker features per category (used by FeatureExplainer)
   - figures/ — visualizations
-  - marker_features_summary_*.json, category_validation_*.json
+  - marker_features_summary_*.json
+  - category_validation_*.json — split-half replication: markers selected on half of each category's prompts, tested on the other half
   - processed_data_dir: prompt_metadata.csv, neuron_metadata.csv, activation_matrix.npy (if applicable)
 
 Return a brief summary to the user: features extracted, counts per category, and saved paths.

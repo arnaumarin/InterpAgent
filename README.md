@@ -64,6 +64,29 @@ export INTERPAGENT_SCORE_SPECIAL_TOKENS=0
 The code accepts both the old `sae-lens` API (`SAE.from_pretrained` returning a tuple) and the
 current one (returning the SAE object).
 
+### FeatureFinder marker statistics
+
+Marker features are tested with **one row per prompt** (`token_statistic="mean"` by default; with
+`all_tokens`, tokens are averaged per prompt before testing, since tokens of one prompt are not
+independent). The Wilcoxon test, log2 fold change and Cohen's d are all computed on the raw SAE
+codes (`workspace/Agents/FeatureFinder/modules/featurefinder/marker_stats.py`).
+`category_validation_*.json` is a split-half replication: markers are selected on half of each
+category's prompts and tested on the other half, so a category can fail.
+
+### Prompt sets
+
+The files in `workspace/data/multilingual_prompts/` come from different sources per language
+(English instruction prompts vs. subtitle / UN text), so language is confounded with genre. For
+language experiments, build a parallel set from FLORES-200, where line *i* is the same sentence in
+every language:
+
+```bash
+python workspace/data/build_parallel_prompts.py   # writes workspace/data/parallel_prompts/
+```
+
+and run FeatureFinder with `prompts_dir=workspace/data/parallel_prompts`. FLORES-200 is CC BY-SA 4.0;
+the generated files are git-ignored because FLORES is an evaluation benchmark.
+
 ### 5. Run the app
 
 From the project root:

@@ -2,3 +2,4 @@
 __pycache__/
 workspace1/logs
 workspace2/logs
+workspace/data/parallel_prompts/

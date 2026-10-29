@@ -36,6 +36,15 @@ warnings.filterwarnings('ignore')
 
 from sae_lens import SAE  # <- pre-installed
 
+try:
+    from . import marker_stats
+except ImportError:  # run as a script
+    import marker_stats
+
+# Token statistics. "all_tokens" keeps one row per token (for embeddings/plots); marker
+# statistics are always computed on one row per prompt (tokens are averaged per prompt).
+TOKEN_STATISTICS = ("mean", "max", "last_token", "all_tokens", "mean_last_k", "max_last_k", "top_p_trimmed_mean")
+
 
 # --- SAE input hook policy ----------------------------------------------------
 # GemmaScope MLP dictionaries are trained on TransformerLens `blocks.L.hook_mlp_out`,
@@ -72,7 +81,7 @@ class CompleteNeuralAtlasPipeline:
         self,
         model_key="gemma_2b",
         max_prompts_per_category=1000,
-        token_statistic="all_tokens",
+        token_statistic="mean",
         last_k_tokens=10,
         top_p_trim=0.5,
         run_permutation_test=False,
@@ -101,6 +110,8 @@ class CompleteNeuralAtlasPipeline:
         self.training_stage = self.model_config["training_stage"]
         self.model_revision = get_model_revision(model_key)
 
+        if token_statistic not in TOKEN_STATISTICS:
+            raise ValueError(f"Unknown token_statistic {token_statistic!r}; expected one of {TOKEN_STATISTICS}")
         self.max_prompts_per_category = max_prompts_per_category
         self.token_statistic = token_statistic
         self.last_k_tokens = last_k_tokens
@@ -122,7 +133,13 @@ class CompleteNeuralAtlasPipeline:
 
         # ----- Output directory -----
         base_output_dir = get_output_dir_multitokenwEnglish(model_key)
-        token_suffix = "666_strict" if self.token_statistic == "all_tokens" else str(self.last_k_tokens)
+        # Historical directory names are kept for the original statistics.
+        if self.token_statistic == "all_tokens":
+            token_suffix = "666_strict"
+        elif self.token_statistic in ("mean_last_k", "max_last_k", "top_p_trimmed_mean"):
+            token_suffix = str(self.last_k_tokens)
+        else:
+            token_suffix = self.token_statistic
         
         # Separate directories for different data types
         self.output_dir = f"{base_output_dir}_{token_suffix}_saeL{self.sae_layer_idx}_{self.sae_width_dir}"  # For figures and CSVs
@@ -310,7 +327,13 @@ class CompleteNeuralAtlasPipeline:
         valid_activations = seq_array[valid_mask == 1]
         if len(valid_activations) == 0:
             return np.zeros(seq_array.shape[1])
-        if self.token_statistic == "mean_last_k":
+        if self.token_statistic == "mean":
+            return np.mean(valid_activations, axis=0)
+        elif self.token_statistic == "max":
+            return np.max(valid_activations, axis=0)
+        elif self.token_statistic == "last_token":
+            return valid_activations[-1]
+        elif self.token_statistic == "mean_last_k":
             k = min(self.last_k_tokens, len(valid_activations))
             return np.mean(valid_activations[-k:], axis=0)
         elif self.token_statistic == "max_last_k":
@@ -327,7 +350,7 @@ class CompleteNeuralAtlasPipeline:
                 trimmed_means.append(np.mean(top_vals))
             return np.array(trimmed_means)
         else:
-            return valid_activations[0]
+            raise ValueError(f"Unknown token_statistic {self.token_statistic!r}")
 
     def load_prompts_and_extract_activations(self, prompts_dir, processed_data_dir):
         """
@@ -385,6 +408,8 @@ class CompleteNeuralAtlasPipeline:
         all_token_texts = []
         all_seq_lens = []
         all_token_offsets = []
+        all_prompt_ids = []  # one id per prompt (not per prompt text), shared by its tokens
+        prompt_counter = 0
 
         total_prompts = sum(len(p) for p in categorized_prompts.values())
         print(f"\nExtracting SAE codes (layer {self.sae_layer_idx}) for {total_prompts} prompts...")
@@ -469,6 +494,8 @@ class CompleteNeuralAtlasPipeline:
                 # Token metadata
                 token_ids = inputs['input_ids'][0].detach().cpu().numpy()
                 token_texts = self.tokenizer.convert_ids_to_tokens(token_ids)
+                prompt_id = f"{category}_{prompt_counter}"
+                prompt_counter += 1
 
                 # Collect features
                 if self.token_statistic == "all_tokens":
@@ -485,6 +512,7 @@ class CompleteNeuralAtlasPipeline:
                         all_token_texts.append(token_texts[token_pos])
                         all_seq_lens.append(valid_tokens)
                         all_token_offsets.append(token_pos)
+                        all_prompt_ids.append(prompt_id)
                 else:
                     sequence_activations = []
                     for token_pos in range(seq_len):
@@ -504,27 +532,20 @@ class CompleteNeuralAtlasPipeline:
                         all_token_texts.append("[AGGREGATED]")
                         all_seq_lens.append(valid_tokens)
                         all_token_offsets.append(-1)
+                        all_prompt_ids.append(prompt_id)
 
         # To matrix
         activation_matrix = np.array(all_activations)
-
-        # Prompt ids
-        prompt_to_id = {}
-        current_prompt_id = 0
-        prompt_ids = []
-        for p, c in zip(all_prompts, all_categories):
-            if p not in prompt_to_id:
-                prompt_to_id[p] = f"{c}_{current_prompt_id}"
-                current_prompt_id += 1
-            prompt_ids.append(prompt_to_id[p])
+        prompt_ids = all_prompt_ids
+        n_unique_prompts = len(set(prompt_ids))
 
         print(f"\nActivation matrix (SAE codes, layer={self.sae_layer_idx}) extracted:")
         print(f"  Shape: {activation_matrix.shape}")
         if self.token_statistic == "all_tokens":
             print(f"  {activation_matrix.shape[0]} tokens × {activation_matrix.shape[1]} SAE features")
-            print(f"  Unique prompts: {len(prompt_to_id)}")
-            if len(prompt_to_id) > 0:
-                print(f"  Avg tokens per prompt: {activation_matrix.shape[0] / len(prompt_to_id):.1f}")
+            print(f"  Unique prompts: {n_unique_prompts}")
+            if n_unique_prompts > 0:
+                print(f"  Avg tokens per prompt: {activation_matrix.shape[0] / n_unique_prompts:.1f}")
         else:
             print(f"  {activation_matrix.shape[0]} observations × {activation_matrix.shape[1]} SAE features")
             print(f"  Statistic: {self.token_statistic}")
@@ -652,20 +673,21 @@ class CompleteNeuralAtlasPipeline:
         else:
             raise ValueError(f"Unknown clustering algorithm: {algorithm!r} (expected 'leiden' or 'louvain')")
 
-        print("2.7 🎯 DIFFERENTIAL EXPRESSION ANALYSIS...")
-        sc.tl.rank_genes_groups(
-            adata,
-            groupby='category',
-            method='wilcoxon',
-            use_raw=True,
-            n_genes=100,
-            corr_method='benjamini-hochberg'
-        )
+        # The normalized/log1p matrix above is only used for HVG/PCA/UMAP/clustering.
+        # Marker statistics use one row per prompt and the raw SAE codes (see marker_stats).
+        print("2.7 🎯 DIFFERENTIAL EXPRESSION ANALYSIS (one row per prompt, raw SAE codes)...")
+        pdata = marker_stats.prompt_level(adata)
+        if pdata.n_obs < adata.n_obs:
+            print(f"   Averaged {adata.n_obs} token observations into {pdata.n_obs} prompts")
+        marker_stats.rank_markers(pdata, n_genes=100)
+        self.prompt_adata = pdata
+        adata.uns['rank_genes_groups'] = pdata.uns['rank_genes_groups']
         print("   ✅ Differential expression analysis complete!")
 
         print(f"\nSaving complete AnnData object...")
         os.makedirs(processed_data_dir, exist_ok=True)
         adata.write(os.path.join(processed_data_dir, 'neural_atlas_complete.h5ad'))
+        pdata.write(os.path.join(processed_data_dir, 'neural_atlas_prompt_level.h5ad'))
 
         pca_df = pd.DataFrame(
             adata.obsm['X_pca'],
@@ -707,39 +729,19 @@ class CompleteNeuralAtlasPipeline:
 
         marker_neurons = {}
         categories = adata.obs['category'].unique()
+        pdata = self.prompt_adata
+        thresholds = marker_stats.DEFAULT_THRESHOLDS
 
-        # stricter thresholds
-        significance_threshold = 0.001
-        score_threshold = 2.0
-        min_logfc = 0.5
-        min_effect_size = 0.3
-        min_neurons_per_category = 1
-
-        print(f"STRICT Quality thresholds:")
-        print(f"  Adjusted p-value < {significance_threshold}")
-        print(f"  Score > {score_threshold}")
-        print(f"  Log fold change > {min_logfc}")
-        print(f"  Effect size (Cohen's d) > {min_effect_size}")
+        print(f"STRICT Quality thresholds (one row per prompt, raw SAE codes):")
+        print(f"  Adjusted p-value < {thresholds['max_pval_adj']}")
+        print(f"  Score > {thresholds['min_score']}")
+        print(f"  Log2 fold change > {thresholds['min_logfc']}")
+        print(f"  Effect size (Cohen's d) > {thresholds['min_effect_size']}")
 
         for category in categories:
             print(f"\n🔍 {category.upper()} SPECIALIZED FEATURES:")
             try:
-                markers_df = sc.get.rank_genes_groups_df(adata, group=category, key='rank_genes_groups')
-                significant_markers = markers_df[
-                    (markers_df['pvals_adj'] < significance_threshold) &
-                    (markers_df['scores'] > score_threshold) &
-                    (markers_df['logfoldchanges'] > min_logfc)
-                ].copy()
-
-                if len(significant_markers) > 0:
-                    effect_sizes = []
-                    for _, marker in significant_markers.iterrows():
-                        effect_size = self.compute_effect_size(adata, marker['names'], category)
-                        effect_sizes.append(effect_size)
-                    significant_markers['effect_size'] = effect_sizes
-                    significant_markers = significant_markers[significant_markers['effect_size'] > min_effect_size]
-
-                top_markers = significant_markers.sort_values('scores', ascending=False)
+                top_markers = marker_stats.select_markers(pdata, category, thresholds)
 
                 if len(top_markers) > 0:
                     marker_neurons[category] = top_markers
@@ -794,151 +796,46 @@ class CompleteNeuralAtlasPipeline:
         return marker_neurons
 
     def compute_effect_size(self, adata, feature_name, category):
-        if feature_name not in adata.var.index:
+        """Cohen's d on prompt-level raw SAE codes (same space as the Wilcoxon test)."""
+        pdata = marker_stats.prompt_level(adata) if 'n_tokens' not in adata.obs else adata
+        if feature_name not in pdata.var_names:
             return 0.0
-        idx = adata.var.index.get_loc(feature_name)
-        x = adata.X[:, idx]
-        if hasattr(x, 'toarray'):
-            x = x.toarray().flatten()
-        else:
-            x = x.flatten()
+        col = pdata.var_names.get_loc(feature_name)
+        in_group = (pdata.obs['category'].astype(str) == category).values
+        return float(marker_stats.group_stats(pdata.X[:, [col]], in_group)[3][0])
 
-        mask = (adata.obs['category'] == category).values
-        a = x[mask]
-        b = x[~mask]
-        if len(a) < 2 or len(b) < 2:
-            return 0.0
-
-        mean_diff = np.mean(a) - np.mean(b)
-        pooled_std = np.sqrt(((len(a) - 1) * np.var(a, ddof=1) + (len(b) - 1) * np.var(b, ddof=1)) / (len(a) + len(b) - 2))
-        if pooled_std == 0:
-            return 0.0
-        return mean_diff / pooled_std
-
-    def validate_category_separation(self, adata, marker_neurons, min_neurons_per_category=5):
-        print(f"\n🔬 VALIDATING CATEGORY SEPARATION")
+    def validate_category_separation(self, adata, marker_neurons, min_neurons_per_category=1, seed=0):
+        """Split-half replication: select markers on half of each category's prompts and
+        test them on the held-out half (see marker_stats.split_half_validation)."""
+        print(f"\n🔬 VALIDATING CATEGORY SEPARATION (split-half replication, seed={seed})")
         print("-" * 45)
 
-        validation_results = {}
-        categories = adata.obs['category'].unique()
-
-        for category in categories:
-            print(f"\n📊 Validating {category.upper()}:")
-            markers = marker_neurons.get(category, pd.DataFrame())
-
-            if len(markers) < min_neurons_per_category:
-                print(f"   ❌ INSUFFICIENT MARKERS: {len(markers)} < {min_neurons_per_category}")
-                validation_results[category] = {
-                    'valid': False,
-                    'reason': f'Insufficient markers: {len(markers)} < {min_neurons_per_category}',
-                    'n_markers': len(markers)
-                }
-                continue
-
-            high_effect = 0
-            for _, m in markers.iterrows():
-                es = self.compute_effect_size(adata, m['names'], category)
-                if es > 0.3:
-                    high_effect += 1
-
-            ratio = high_effect / len(markers) if len(markers) > 0 else 0
-
-            if ratio < 0.5:
-                print(f"   ❌ LOW EFFECT SIZES: {high_effect}/{len(markers)} have d>0.3")
-                validation_results[category] = {
-                    'valid': False,
-                    'reason': f'Low effect sizes: {high_effect}/{len(markers)} > 0.3',
-                    'n_markers': len(markers),
-                    'high_effect_markers': high_effect,
-                    'effect_ratio': ratio
-                }
-                continue
-
-            counts = adata.obs['category'].value_counts()
-            min_count, max_count = counts.min(), counts.max()
-            balance_ratio = min_count / max_count if max_count > 0 else 0
-            if balance_ratio < 0.3:
-                print(f"   ⚠️  IMBALANCED CATEGORIES: ratio {balance_ratio:.2f} (min={min_count}, max={max_count})")
-
-            print(f"   ✅ VALID CLASSIFICATION: markers={len(markers)}, high_effect={high_effect}/{len(markers)} ({ratio:.1%}), balance={balance_ratio:.2f}")
-
-            validation_results[category] = {
-                'valid': True,
-                'n_markers': len(markers),
-                'high_effect_markers': high_effect,
-                'effect_ratio': ratio,
-                'balance_ratio': balance_ratio
-            }
-
+        validation_results = marker_stats.split_half_validation(
+            self.prompt_adata, min_markers=min_neurons_per_category, seed=seed
+        )
+        for category, r in validation_results.items():
+            if r['valid']:
+                print(f"   ✅ {category}: {r['n_replicated']}/{r['n_discovery_markers']} discovery markers replicate "
+                      f"on {r['n_heldout_prompts']} held-out prompts ({r['replication_rate']:.0%})")
+            else:
+                print(f"   ❌ {category}: {r['reason']}")
+        balance = next(iter(validation_results.values()))['balance_ratio'] if validation_results else 1.0
+        if balance < 0.3:
+            print(f"   ⚠️  IMBALANCED CATEGORIES: min/max prompt count ratio {balance:.2f}")
         return validation_results
 
-    def permutation_test(self, adata, n_permutations=100, alpha=0.05):
-        print(f"\n🎲 PERMUTATION TESTING ({n_permutations} permutations)")
+    def permutation_test(self, adata, n_permutations=100, alpha=0.05, seed=0):
+        """Shuffles category labels across prompts (not tokens)."""
+        print(f"\n🎲 PERMUTATION TESTING ({n_permutations} permutations, prompt-level labels)")
         print("-" * 50)
-
-        categories = adata.obs['category'].unique()
-        original_labels = adata.obs['category'].values
-
-        original_results = {}
-        for category in categories:
-            try:
-                df = sc.get.rank_genes_groups_df(adata, group=category, key='rank_genes_groups')
-                original_results[category] = len(df[df['pvals_adj'] < 0.05])
-            except:
-                original_results[category] = 0
-
-        permutation_results = {c: [] for c in categories}
-
-        for perm in range(n_permutations):
-            if perm % 20 == 0:
-                print(f"   Permutation {perm+1}/{n_permutations}...")
-            shuffled = np.random.permutation(original_labels)
-            adata.obs['category'] = shuffled
-            try:
-                sc.tl.rank_genes_groups(
-                    adata,
-                    groupby='category',
-                    method='wilcoxon',
-                    use_raw=True,
-                    n_genes=100,
-                    corr_method='benjamini-hochberg'
-                )
-                for category in categories:
-                    try:
-                        df = sc.get.rank_genes_groups_df(adata, group=category, key='rank_genes_groups')
-                        n_sig = len(df[df['pvals_adj'] < 0.05])
-                        permutation_results[category].append(n_sig)
-                    except:
-                        permutation_results[category].append(0)
-            except:
-                for category in categories:
-                    permutation_results[category].append(0)
-
-        adata.obs['category'] = original_labels
-
-        permutation_pvalues = {}
-        for category in categories:
-            original_count = original_results[category]
-            perm_counts = permutation_results[category]
-            p_value = np.mean([c >= original_count for c in perm_counts])
-            permutation_pvalues[category] = p_value
+        result = marker_stats.permutation_test(self.prompt_adata, n_permutations=n_permutations, alpha=alpha, seed=seed)
+        for category, p_value in result['permutation_pvalues'].items():
             status = "✅ SIGNIFICANT" if p_value < alpha else "❌ NOT SIGNIFICANT"
-            print(f"   {category}: {original_count} markers, p={p_value:.3f} {status}")
-
-        n_significant_categories = sum(1 for p in permutation_pvalues.values() if p < alpha)
-        overall_significant = n_significant_categories > 0
-
+            print(f"   {category}: {result['original_counts'][category]} markers, p={p_value:.3f} {status}")
         print(f"\n📊 PERMUTATION TEST SUMMARY:")
-        print(f"   Significant categories: {n_significant_categories}/{len(categories)}")
-        print(f"   Overall result: {'✅ SIGNIFICANT' if overall_significant else '❌ NOT SIGNIFICANT'}")
-
-        return {
-            'permutation_pvalues': permutation_pvalues,
-            'original_counts': original_results,
-            'n_significant_categories': n_significant_categories,
-            'overall_significant': overall_significant,
-            'n_permutations': n_permutations
-        }
+        print(f"   Significant categories: {result['n_significant_categories']}/{len(result['permutation_pvalues'])}")
+        print(f"   Overall result: {'✅ SIGNIFICANT' if result['overall_significant'] else '❌ NOT SIGNIFICANT'}")
+        return result
 
     def create_comprehensive_visualizations(self, adata, marker_neurons, figures_dir):
         print(f"\nSTEP 4: CREATING COMPREHENSIVE VISUALIZATIONS (SAE layer={self.sae_layer_idx})")
@@ -1094,7 +991,7 @@ class CompleteNeuralAtlasPipeline:
             adata, processed_data_dir, results_dir
         )
 
-        # Optional validation
+        # Held-out validation
         min_neurons_per_category = 1
         validation_results = self.validate_category_separation(
             adata, marker_neurons, min_neurons_per_category
@@ -1102,6 +999,7 @@ class CompleteNeuralAtlasPipeline:
         validation_path = os.path.join(results_dir, f"category_validation_saeL{self.sae_layer_idx}_{self.max_prompts_per_category}_prompts.json")
         with open(validation_path, 'w') as f:
             json.dump(validation_results, f, indent=2)
+        self.results.setdefault('step3_marker_neurons', {})['category_validation'] = validation_results
 
         print(f"\n📋 VALIDATION SUMMARY:")
         print("-" * 28)
@@ -1110,7 +1008,7 @@ class CompleteNeuralAtlasPipeline:
         print(f"✅ Valid categories: {len(valid_cats)}/{len(validation_results)}")
         for c in valid_cats:
             r = validation_results[c]
-            print(f"   {c}: {r['n_markers']} markers, effect ratio: {r['effect_ratio']:.1%}")
+            print(f"   {c}: {r['n_discovery_markers']} discovery markers, replication rate: {r['replication_rate']:.1%}")
         if invalid_cats:
             print(f"❌ Invalid categories: {len(invalid_cats)}/{len(validation_results)}")
             for c in invalid_cats:
